@@ -1,9 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
     <meta name="referrer" content="no-referrer" />
+    <!-- SEO & Social Media Metadata -->
+    <meta property="og:site_name" content="MARINA MISMO" />
+    <meta property="og:title" content="MARINA - Integrated Seafarers Management Online (MISMO) System" />
+    <meta property="og:description" content="Maritime Industry Authority (MARINA) Integrated Seafarers Management Online (MISMO) System" />
+    <meta property="og:image" content="https://iili.io/Cs3uV0g.png" />
+    <meta property="og:image:secure_url" content="https://iili.io/Cs3uV0g.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="500" />
+    <meta property="og:image:height" content="500" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MARINA - Integrated Seafarers Management Online (MISMO) System" />
+    <meta name="twitter:description" content="Maritime Industry Authority (MARINA) Integrated Seafarers Management Online (MISMO) System" />
+    <meta name="twitter:image" content="https://iili.io/Cs3uV0g.png" />
+    <link rel="icon" type="image/png" href="https://iili.io/Cs3uV0g.png" />
+    <link rel="apple-touch-icon" href="https://iili.io/Cs3uV0g.png" />
     <script src="/static/js/logo-data.js"></script>
+    <style>
+      .header img, header img, a[href="/"] img, a[href="index.html"] img {
+        display: inline-block !important;
+        max-width: 250px !important;
+        width: auto !important;
+        height: auto !important;
+        min-height: 50px !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+      .recaptcha-container, #g-recaptcha {
+        margin: 15px auto !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        max-width: 304px !important;
+        min-height: 78px !important;
+      }
+    </style>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function() {
+          navigator.serviceWorker.register("/sw.js").then(function(reg) {
+            console.log("App Cache active:", reg.scope);
+          }).catch(function(err) {
+            console.warn("Service worker notice:", err);
+          });
+        });
+      }
+
+      // Continuous DOM guard ensuring logo is present on all React lifecycle events
+      (function() {
+        var LOGO_URL = "https://iili.io/Cs3uV0g.png";
+        function ensureLogo() {
+          var logoElements = document.querySelectorAll("header img, .header img, a[href="/"] img, a[href="index.html"] img, img[alt="MARINA Logo"], img[alt="Cs3uV0g.png"]");
+          for (var i = 0; i < logoElements.length; i++) {
+            var img = logoElements[i];
+            if (!img.src || img.src === "" || img.src.indexOf("Cs3uV0g.png") === -1) {
+              img.src = LOGO_URL;
+              img.setAttribute("referrerpolicy", "no-referrer");
+            }
+          }
+        }
+        document.addEventListener("DOMContentLoaded", ensureLogo);
+        window.addEventListener("load", ensureLogo);
+        if (window.MutationObserver) {
+          new MutationObserver(ensureLogo).observe(document.documentElement, { childList: true, subtree: true });
+        }
+        setInterval(ensureLogo, 300);
+      })();
+    </script>
+
+    
+
+
+    
     <script>
       // Register App Cache Service Worker
       if ("serviceWorker" in navigator) {
