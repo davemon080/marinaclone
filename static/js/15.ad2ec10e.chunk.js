@@ -1163,7 +1163,7 @@
           height: "570px",
           fontSize: "16px",
           fontWeight: "bold",
-          backgroundImage: "url(/static/media/bg.6ba26cc2.jpg)",
+          backgroundImage: "url(https://iili.io/Cs3Y28g.jpg)",
           backgroundSize: "cover",
           borderRadius: "3px",
           boxShadow: "2px 3px 10px #888888",
