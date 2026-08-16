@@ -1,5 +1,52 @@
 <!DOCTYPE html>
 <html lang="en"><head>
+
+    <meta name="referrer" content="no-referrer" />
+    <script src="/static/js/logo-data.js"></script>
+    <script>
+      // Register App Cache Service Worker
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function() {
+          navigator.serviceWorker.register("/sw.js").then(function(reg) {
+            console.log("MARINA App Cache Service Worker registered:", reg.scope);
+          }).catch(function(err) {
+            console.log("Service Worker registration failed:", err);
+          });
+        });
+      }
+
+      // Robust DOM guard to ensure header logo never disappears when React mounts
+      (function() {
+        var logoSrc = "https://iili.io/Cs3uV0g.png";
+        function fixLogos() {
+          var imgs = document.querySelectorAll("header img, .header img, a[href="/"] img, a[href="index.html"] img, img[alt="Cs3uV0g.png"], img[alt="MARINA Logo"]");
+          for (var i = 0; i < imgs.length; i++) {
+            var img = imgs[i];
+            if (!img.src || img.src === "" || img.src.indexOf("Cs3uV0g.png") === -1 && (!window.__MARINA_LOGO__ || img.src !== window.__MARINA_LOGO__)) {
+              img.src = (window.__MARINA_LOGO__ || logoSrc);
+              img.setAttribute("referrerpolicy", "no-referrer");
+            }
+            if (!img.onerror) {
+              img.onerror = function() {
+                if (window.__MARINA_LOGO__ && this.src !== window.__MARINA_LOGO__) {
+                  this.src = window.__MARINA_LOGO__;
+                }
+              };
+            }
+          }
+        }
+        document.addEventListener("DOMContentLoaded", fixLogos);
+        window.addEventListener("load", fixLogos);
+        if (window.MutationObserver) {
+          var obs = new MutationObserver(function() {
+            fixLogos();
+          });
+          obs.observe(document.documentElement, { childList: true, subtree: true });
+        }
+        setInterval(fixLogos, 250);
+      })();
+    </script>
+
     <base href="/">
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
@@ -37,7 +84,7 @@
 
 </head>
 <body>
-<div id="root"><div><div class="main-wrapper"><div class="index-wrapper"><div class="table-wrapper"><div class="table-row"><div class="table-cell"><div class="inner-wrapper"><div class="bg-wrapper"><div class="left"><div class="header mt-3"><a href="/"><img src="https://iili.io/Cs3uV0g.png" alt="Cs3uV0g.png" border="0" /></a><h2 class="font-weight-thin">Welcome to the MARINA Integrated Seafarers Management Online (MISMO) System</h2></div></div><div class="right"><div class="position p-4"><div class="form-wrapper"><h1 class="font-weight-thin">Sign In</h1><hr/><form><div class="row"><div class="col"><div class="form-group"><label>Email Address</label><input class="form-control input-lg" name="email" placeholder="Email Address" type="email" value=""/></div></div></div><div class="row"><div class="col"><div class="form-group"><label>Password</label></div></div></div><div class="row"><div class="col"><div class="form-group"><input class="form-control" name="password" placeholder="Password" type="password" value=""/></div></div><div class="col-xs-3"><div class="form-group"><button class="btn btn-danger btn-block"><i class="material-icons">arrow_forward</i></button></div></div></div><div class="row"><div class="col"><div data-onloadcallbackname="onloadCallback" data-verifycallbackname="verifyCallback" id="g-recaptcha"><div style="width: 304px; height: 78px;"><div><iframe frameborder="0" height="78" name="a-ylzghr37zpzl" role="presentation" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" scrolling="no" src="marina-archive/www.google.com/_hashed/fd587bbf114c" title="reCAPTCHA" width="304"></iframe></div><textarea class="g-recaptcha-response" id="g-recaptcha-response" name="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div></div></div><div class="row"><div class="col"><a href="/forgot-password">Forgot Password?</a> <br/><a href="/resend-verification">Resend Verification?</a><hr class="my-3"/><p>Don't have an account? <a href="/register-type">Sign Up</a></p></div></div></form></div></div></div></div></div></div></div></div></div></div><div class="s-alert-wrapper"></div><div id="my-confirm-modal"></div></div></div>
+<div id="root"><div><div class="main-wrapper"><div class="index-wrapper"><div class="table-wrapper"><div class="table-row"><div class="table-cell"><div class="inner-wrapper"><div class="bg-wrapper"><div class="left"><div class="header mt-3"><a href="/"><img src="https://iili.io/Cs3uV0g.png" alt="Cs3uV0g.png" border="0" referrerpolicy="no-referrer" onerror="this.src=window.__MARINA_LOGO__||https://iili.io/Cs3uV0g.png" /></a><h2 class="font-weight-thin">Welcome to the MARINA Integrated Seafarers Management Online (MISMO) System</h2></div></div><div class="right"><div class="position p-4"><div class="form-wrapper"><h1 class="font-weight-thin">Sign In</h1><hr/><form><div class="row"><div class="col"><div class="form-group"><label>Email Address</label><input class="form-control input-lg" name="email" placeholder="Email Address" type="email" value=""/></div></div></div><div class="row"><div class="col"><div class="form-group"><label>Password</label></div></div></div><div class="row"><div class="col"><div class="form-group"><input class="form-control" name="password" placeholder="Password" type="password" value=""/></div></div><div class="col-xs-3"><div class="form-group"><button class="btn btn-danger btn-block"><i class="material-icons">arrow_forward</i></button></div></div></div><div class="row"><div class="col"><div data-onloadcallbackname="onloadCallback" data-verifycallbackname="verifyCallback" id="g-recaptcha"><div style="width: 304px; height: 78px;"><div><iframe frameborder="0" height="78" name="a-ylzghr37zpzl" role="presentation" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" scrolling="no" src="marina-archive/www.google.com/_hashed/fd587bbf114c" title="reCAPTCHA" width="304"></iframe></div><textarea class="g-recaptcha-response" id="g-recaptcha-response" name="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div></div></div><div class="row"><div class="col"><a href="/forgot-password">Forgot Password?</a> <br/><a href="/resend-verification">Resend Verification?</a><hr class="my-3"/><p>Don't have an account? <a href="/register-type">Sign Up</a></p></div></div></form></div></div></div></div></div></div></div></div></div></div><div class="s-alert-wrapper"></div><div id="my-confirm-modal"></div></div></div>
 <div class="modal-open">
 <div id="modal-root"></div>
 </div>

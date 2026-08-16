@@ -1,5 +1,52 @@
 <!DOCTYPE html>
 <html lang="en"><head>
+
+    <meta name="referrer" content="no-referrer" />
+    <script src="/static/js/logo-data.js"></script>
+    <script>
+      // Register App Cache Service Worker
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function() {
+          navigator.serviceWorker.register("/sw.js").then(function(reg) {
+            console.log("MARINA App Cache Service Worker registered:", reg.scope);
+          }).catch(function(err) {
+            console.log("Service Worker registration failed:", err);
+          });
+        });
+      }
+
+      // Robust DOM guard to ensure header logo never disappears when React mounts
+      (function() {
+        var logoSrc = "https://iili.io/Cs3uV0g.png";
+        function fixLogos() {
+          var imgs = document.querySelectorAll("header img, .header img, a[href="/"] img, a[href="index.html"] img, img[alt="Cs3uV0g.png"], img[alt="MARINA Logo"]");
+          for (var i = 0; i < imgs.length; i++) {
+            var img = imgs[i];
+            if (!img.src || img.src === "" || img.src.indexOf("Cs3uV0g.png") === -1 && (!window.__MARINA_LOGO__ || img.src !== window.__MARINA_LOGO__)) {
+              img.src = (window.__MARINA_LOGO__ || logoSrc);
+              img.setAttribute("referrerpolicy", "no-referrer");
+            }
+            if (!img.onerror) {
+              img.onerror = function() {
+                if (window.__MARINA_LOGO__ && this.src !== window.__MARINA_LOGO__) {
+                  this.src = window.__MARINA_LOGO__;
+                }
+              };
+            }
+          }
+        }
+        document.addEventListener("DOMContentLoaded", fixLogos);
+        window.addEventListener("load", fixLogos);
+        if (window.MutationObserver) {
+          var obs = new MutationObserver(function() {
+            fixLogos();
+          });
+          obs.observe(document.documentElement, { childList: true, subtree: true });
+        }
+        setInterval(fixLogos, 250);
+      })();
+    </script>
+
     <base href="/">
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
@@ -37,7 +84,7 @@
 
 </head>
 <body>
-<div id="root"><div><div class="main-wrapper"><div class="index-wrapper"><div class="table-wrapper"><div class="table-row"><div class="table-cell"><div class="inner-wrapper"><div class="bg-wrapper"><div class="left"><div class="header mt-3"><a href="/"><img src="https://iili.io/Cs3uV0g.png" alt="Cs3uV0g.png" border="0" /></a><h2 class="font-weight-thin">Welcome to the MARINA Integrated Seafarers Management Online (MISMO) System</h2></div></div><div class="right"><div class="position p-4"><div class="form-wrapper"><h3 class="mb-4 font-weight-thin">You can now set an appointment with MARINA.</h3><div class="mb-2"><p>In the light of safety and precautionary health measures, the MARINA shall conduct a full online evaluation of applications for issuance of STCW Certificates. The personal presence of the applicant will only be required during the scheduled release of certificates and theoretical assessment permit.</p></div><div class="row"><div class="col-md-6"><p><small class="text-muted">Don’t have an account?</small></p><a class="btn btn-primary btn-block" href="/register-type">Sign Up</a><a class="btn btn-danger btn-block" href="/signin">Sign In</a><div class="or-span"><span>OR</span></div><a class="btn btn-warning btn-block" href="/verify-id-certificate">Verify SIRB/ID/Cert</a><a class="btn btn-info btn-block" href="/verify-qr-code">Verify Cert via QR Code</a><a class="btn btn-success btn-block" href="/examination-schedules">Exam Schedules</a></div></div></div></div></div></div></div></div></div></div></div></div><div class="s-alert-wrapper"></div><div id="my-confirm-modal"></div></div></div>
+<div id="root"><div><div class="main-wrapper"><div class="index-wrapper"><div class="table-wrapper"><div class="table-row"><div class="table-cell"><div class="inner-wrapper"><div class="bg-wrapper"><div class="left"><div class="header mt-3"><a href="/"><img src="https://iili.io/Cs3uV0g.png" alt="Cs3uV0g.png" border="0" referrerpolicy="no-referrer" onerror="this.src=window.__MARINA_LOGO__||https://iili.io/Cs3uV0g.png" /></a><h2 class="font-weight-thin">Welcome to the MARINA Integrated Seafarers Management Online (MISMO) System</h2></div></div><div class="right"><div class="position p-4"><div class="form-wrapper"><h3 class="mb-4 font-weight-thin">You can now set an appointment with MARINA.</h3><div class="mb-2"><p>In the light of safety and precautionary health measures, the MARINA shall conduct a full online evaluation of applications for issuance of STCW Certificates. The personal presence of the applicant will only be required during the scheduled release of certificates and theoretical assessment permit.</p></div><div class="row"><div class="col-md-6"><p><small class="text-muted">Don’t have an account?</small></p><a class="btn btn-primary btn-block" href="/register-type">Sign Up</a><a class="btn btn-danger btn-block" href="/signin">Sign In</a><div class="or-span"><span>OR</span></div><a class="btn btn-warning btn-block" href="/verify-id-certificate">Verify SIRB/ID/Cert</a><a class="btn btn-info btn-block" href="/verify-qr-code">Verify Cert via QR Code</a><a class="btn btn-success btn-block" href="/examination-schedules">Exam Schedules</a></div></div></div></div></div></div></div></div></div></div></div></div><div class="s-alert-wrapper"></div><div id="my-confirm-modal"></div></div></div>
 <div class="modal-open">
 <div id="modal-root"></div>
 </div>
