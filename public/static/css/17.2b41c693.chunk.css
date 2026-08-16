@@ -89,3 +89,6 @@
     font-size: 0.875rem !important;
   }
 }
+
+@media (max-width: 768px){.header img,header img,a[href="/"] img{max-width:100px !important;width:100px !important;height:auto !important;}.header{margin-bottom:15px !important;}}
+@media (max-width: 480px){.header img,header img,a[href="/"] img{max-width:85px !important;width:85px !important;height:auto !important;}}
