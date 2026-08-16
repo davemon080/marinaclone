@@ -1,0 +1,7 @@
+# Vercel Ignore File
+# Ignore backend runtime files so Vercel builds as a clean Vite static site + /api serverless functions
+server.ts
+server.py
+tests/
+dist/server.cjs
+dist/server.cjs.map
