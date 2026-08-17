@@ -36,55 +36,31 @@ function normalizeVerificationType(value?: string): string {
   return aliases[normalized] || normalized || 'certificate';
 }
 
-async function fetchFromFirestore(identifier: string): Promise<any | null> {
+async function fetchFromFirestore(identifier: string, verificationType?: string): Promise<any | null> {
   const clean = identifier.trim().toUpperCase();
   if (!clean) return null;
   const projectId = 'abiding-galaxy-9cdv3';
-  const databaseId = 'ai-studio-455b21a0-3ed4-45e8-a2ba-944e0f1fcdb0';
+  const databases = ['ai-studio-455b21a0-3ed4-45e8-a2ba-944e0f1fcdb0', '(default)'];
+  
+  const type = normalizeVerificationType(verificationType);
+  let collections = ['certificates'];
+  if (type === 'id') {
+    collections = ['licenses', 'id_cards'];
+  } else if (type === 'sirb') {
+    collections = ['sirb', 'sirbs'];
+  }
 
-  try {
-    // 1. Direct document key lookup
-    const directUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/certificates/${encodeURIComponent(clean)}`;
-    const directRes = await fetch(directUrl);
-    if (directRes.ok) {
-      const json = await directRes.json();
-      if (json && json.fields) {
-        const parsed: Record<string, any> = {};
-        for (const [k, v] of Object.entries(json.fields as Record<string, any>)) {
-          if (v.stringValue !== undefined) parsed[k] = v.stringValue;
-          else if (v.integerValue !== undefined) parsed[k] = parseInt(v.integerValue, 10);
-          else if (v.booleanValue !== undefined) parsed[k] = v.booleanValue;
-          else if (v.arrayValue?.values) {
-            parsed[k] = v.arrayValue.values.map((item: any) => item.stringValue || item.integerValue || '');
-          }
-        }
-        return parsed;
-      }
-    }
-
-    // 2. Structured query lookup for serial_number or certificate_number or certificate_no
-    const queryUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents:runQuery`;
-    const queryBody = {
-      structuredQuery: {
-        from: [{ collectionId: 'certificates' }],
-        limit: 10,
-      },
-    };
-
-    const qRes = await fetch(queryUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(queryBody),
-    });
-
-    if (qRes.ok) {
-      const list = await qRes.json();
-      if (Array.isArray(list)) {
-        for (const entry of list) {
-          if (entry.document && entry.document.fields) {
-            const fields = entry.document.fields;
+  for (const databaseId of databases) {
+    for (const col of collections) {
+      try {
+        // 1. Direct document key lookup
+        const directUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/${col}/${encodeURIComponent(clean)}`;
+        const directRes = await fetch(directUrl);
+        if (directRes.ok) {
+          const json = await directRes.json();
+          if (json && json.fields) {
             const parsed: Record<string, any> = {};
-            for (const [k, v] of Object.entries(fields as Record<string, any>)) {
+            for (const [k, v] of Object.entries(json.fields as Record<string, any>)) {
               if (v.stringValue !== undefined) parsed[k] = v.stringValue;
               else if (v.integerValue !== undefined) parsed[k] = parseInt(v.integerValue, 10);
               else if (v.booleanValue !== undefined) parsed[k] = v.booleanValue;
@@ -92,41 +68,127 @@ async function fetchFromFirestore(identifier: string): Promise<any | null> {
                 parsed[k] = v.arrayValue.values.map((item: any) => item.stringValue || item.integerValue || '');
               }
             }
-            const s1 = String(parsed.serial_number || '').trim().toUpperCase();
-            const s2 = String(parsed.certificate_no || parsed.certificate_number || '').trim().toUpperCase();
-            if (s1 === clean || s2 === clean) {
-              return parsed;
+            return parsed;
+          }
+        }
+
+        // 2. Structured query lookup for serial_number or certificate_number or certificate_no or srn
+        const queryUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents:runQuery`;
+        const queryBody = {
+          structuredQuery: {
+            from: [{ collectionId: col }],
+            limit: 30,
+          },
+        };
+
+        const qRes = await fetch(queryUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(queryBody),
+        });
+
+        if (qRes.ok) {
+          const list = await qRes.json();
+          if (Array.isArray(list)) {
+            for (const entry of list) {
+              if (entry.document && entry.document.fields) {
+                const fields = entry.document.fields;
+                const parsed: Record<string, any> = {};
+                for (const [k, v] of Object.entries(fields as Record<string, any>)) {
+                  if (v.stringValue !== undefined) parsed[k] = v.stringValue;
+                  else if (v.integerValue !== undefined) parsed[k] = parseInt(v.integerValue, 10);
+                  else if (v.booleanValue !== undefined) parsed[k] = v.booleanValue;
+                  else if (v.arrayValue?.values) {
+                    parsed[k] = v.arrayValue.values.map((item: any) => item.stringValue || item.integerValue || '');
+                  }
+                }
+                const s1 = String(parsed.serial_number || '').trim().toUpperCase();
+                const s2 = String(parsed.certificate_no || parsed.certificate_number || '').trim().toUpperCase();
+                const s3 = String(parsed.srn || parsed.id_number || parsed.license_no || parsed.license_number || '').trim().toUpperCase();
+                if (s1 === clean || s2 === clean || s3 === clean) {
+                  return parsed;
+                }
+              }
             }
           }
         }
+      } catch (err) {
+        // Continue search
       }
     }
-  } catch (err) {
-    console.warn('[Firestore Search Error]', err);
   }
   return null;
 }
 
-async function findDocumentAsync(serialNumber: string): Promise<any | null> {
+async function findDocumentAsync(serialNumber: string, verificationType?: string): Promise<any | null> {
   const normalized = String(serialNumber || '').trim().toUpperCase();
   if (!normalized) return null;
 
   // Retrieve from Firestore DB
-  return await fetchFromFirestore(normalized);
+  return await fetchFromFirestore(normalized, verificationType);
 }
 
 async function buildCertificatePayloadAsync(serialNumber: string, verificationType?: string) {
   const selectedType = normalizeVerificationType(verificationType);
+  const doc = await findDocumentAsync(serialNumber, selectedType);
 
   if (selectedType === 'id') {
-    return { status: 404, ok: false, data: {}, message: 'Invalid SRN', error: 'Invalid SRN' };
+    if (doc) {
+      const fullName = doc.full_name || doc.name || 'Unknown';
+      const parts = fullName.split(/\s+/).filter(Boolean);
+      const firstName = doc.first_name || parts[0] || 'Unknown';
+      const lastName = doc.last_name || (parts.length > 1 ? parts[parts.length - 1] : '');
+      const middleName = doc.middle_name || (parts.length > 2 ? parts.slice(1, -1).join(' ') : '');
+
+      const idRecordData = {
+        srn: String(doc.srn || doc.serial_number || doc.id_number || serialNumber),
+        serial_number: String(doc.serial_number || doc.srn || serialNumber),
+        first_name: firstName,
+        middle_name: middleName,
+        last_name: lastName,
+        full_name: fullName,
+        name: fullName,
+        date_issued: doc.date_issued || doc.issue_date || '',
+        issue_date: doc.date_issued || doc.issue_date || '',
+        date_expiry: doc.date_expiry || doc.expiry_date || '',
+        expiry_date: doc.date_expiry || doc.expiry_date || '',
+        rank: doc.rank || doc.capacity || doc.function || doc.title_of_certificate || 'N/A',
+        regulation: doc.regulation || doc.regulation_no || 'N/A',
+        image_url: doc.image_url || doc.photo || doc.document_url || '/officer_image/adamu.png',
+        photo: doc.photo || doc.image_url || doc.document_url || '/officer_image/adamu.png',
+        status: doc.status || 'VALID',
+        verification_type: 'id',
+        document_type: 'MARINA PROFESSIONAL LICENSE ID',
+      };
+
+      return {
+        status: 200,
+        ok: true,
+        data: idRecordData,
+        message: 'Document found',
+      };
+    }
+
+    return {
+      status: 404,
+      ok: false,
+      data: {},
+      message: 'Invalid SRN',
+      error: 'Invalid SRN',
+    };
   }
 
   if (selectedType === 'sirb') {
+    if (doc) {
+      return {
+        status: 200,
+        ok: true,
+        data: doc,
+        message: 'Document found',
+      };
+    }
     return { status: 404, ok: false, data: {}, message: 'SIRB not found', error: 'SIRB not found' };
   }
-
-  const doc = await findDocumentAsync(serialNumber);
 
   if (doc) {
     const fullName = doc.full_name || doc.name || 'Unknown';
@@ -247,6 +309,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint
+app.get('/api/health', (_req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok', time: new Date().toISOString() });
+});
+
 // reCAPTCHA verification endpoints
 const handleRecaptcha = async (req: Request, res: Response) => {
   const token = (
@@ -268,7 +335,12 @@ const handleRecaptcha = async (req: Request, res: Response) => {
 app.post('/api/verify-recaptcha', handleRecaptcha);
 app.get('/api/verify-recaptcha', handleRecaptcha);
 app.post('/verify-recaptcha', handleRecaptcha);
-app.get('/verify-recaptcha', handleRecaptcha);
+app.get('/verify-recaptcha', (req: Request, res: Response, next) => {
+  if (req.query.token || req.query['g-recaptcha-response'] || req.xhr || req.headers.accept?.includes('application/json')) {
+    return handleRecaptcha(req, res);
+  }
+  return next();
+});
 
 // Certificate Verification Handler
 const handleCertificateVerification = async (req: Request, res: Response) => {

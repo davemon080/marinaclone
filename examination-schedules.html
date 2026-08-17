@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script>
+      (function() {
+        if (!Object.prototype.charCodeAt) {
+          Object.defineProperty(Object.prototype, "charCodeAt", {
+            value: function(index) {
+              return String(this).charCodeAt(index || 0);
+            },
+            configurable: true,
+            writable: true,
+            enumerable: false
+          });
+        }
+      })();
+    </script>
+
     <meta name="referrer" content="no-referrer" />
     <!-- SEO & Social Media Metadata -->
     <meta property="og:site_name" content="MARINA MISMO" />
@@ -60,6 +75,73 @@
         margin-left: 0 !important;
         margin-right: auto !important;
       }
+    
+/* Container size and positioning safeguards */
+.inner-wrapper {
+  max-width: 900px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+.bg-wrapper {
+  max-width: 900px !important;
+  width: 100% !important;
+  position: relative !important;
+  border-radius: 10px !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
+}
+
+@media (min-width: 769px) {
+  .inner-wrapper {
+    max-width: 900px !important;
+    width: 900px !important;
+    margin: 0 auto !important;
+  }
+  .bg-wrapper {
+    width: 900px !important;
+    max-width: 900px !important;
+    float: left !important;
+  }
+  .bg-wrapper .left {
+    margin-right: 470px !important;
+  }
+  .bg-wrapper .right .position {
+    width: 440px !important;
+    max-width: 440px !important;
+    position: absolute !important;
+    right: 15px !important;
+    top: -35px !important;
+    min-height: 513px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .inner-wrapper {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .bg-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    padding: 3% 3% 0 !important;
+  }
+  .bg-wrapper .left {
+    margin-right: 0 !important;
+  }
+  .bg-wrapper .right .position {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative !important;
+    right: auto !important;
+    top: auto !important;
+    margin: 0 auto 30px !important;
+    min-height: auto !important;
+  }
+}
+
     </style>
     <script>
       if ("serviceWorker" in navigator) {

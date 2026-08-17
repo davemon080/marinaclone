@@ -74,49 +74,29 @@ function fetchJson(url, options = {}) {
   });
 }
 
-async function fetchFromFirestore(identifier) {
+async function fetchFromFirestore(identifier, verificationType) {
   const clean = identifier.trim().toUpperCase();
   if (!clean) return null;
 
-  try {
-    // 1. Direct document key lookup
-    const directUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${DATABASE_ID}/documents/certificates/${encodeURIComponent(clean)}`;
-    const directRes = await fetchJson(directUrl);
-    
-    if (directRes.ok && directRes.data && directRes.data.fields) {
-      const parsed = {};
-      for (const [k, v] of Object.entries(directRes.data.fields)) {
-        if (v.stringValue !== undefined) parsed[k] = v.stringValue;
-        else if (v.integerValue !== undefined) parsed[k] = parseInt(v.integerValue, 10);
-        else if (v.booleanValue !== undefined) parsed[k] = v.booleanValue;
-        else if (v.arrayValue && v.arrayValue.values) {
-          parsed[k] = v.arrayValue.values.map((item) => item.stringValue || item.integerValue || '');
-        }
-      }
-      return parsed;
-    }
+  const type = normalizeVerificationType(verificationType);
+  let collections = ['certificates'];
+  if (type === 'id') {
+    collections = ['licenses', 'id_cards'];
+  } else if (type === 'sirb') {
+    collections = ['sirb', 'sirbs'];
+  }
+  const databases = [DATABASE_ID, '(default)'];
 
-    // 2. Structured query lookup
-    const queryUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${DATABASE_ID}/documents:runQuery`;
-    const queryBody = JSON.stringify({
-      structuredQuery: {
-        from: [{ collectionId: 'certificates' }],
-        limit: 20,
-      },
-    });
-
-    const qRes = await fetchJson(queryUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(queryBody) },
-      body: queryBody,
-    });
-
-    if (qRes.ok && Array.isArray(qRes.data)) {
-      for (const entry of qRes.data) {
-        if (entry.document && entry.document.fields) {
-          const fields = entry.document.fields;
+  for (const dbId of databases) {
+    for (const col of collections) {
+      try {
+        // 1. Direct document key lookup
+        const directUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${dbId}/documents/${col}/${encodeURIComponent(clean)}`;
+        const directRes = await fetchJson(directUrl);
+        
+        if (directRes.ok && directRes.data && directRes.data.fields) {
           const parsed = {};
-          for (const [k, v] of Object.entries(fields)) {
+          for (const [k, v] of Object.entries(directRes.data.fields)) {
             if (v.stringValue !== undefined) parsed[k] = v.stringValue;
             else if (v.integerValue !== undefined) parsed[k] = parseInt(v.integerValue, 10);
             else if (v.booleanValue !== undefined) parsed[k] = v.booleanValue;
@@ -124,16 +104,50 @@ async function fetchFromFirestore(identifier) {
               parsed[k] = v.arrayValue.values.map((item) => item.stringValue || item.integerValue || '');
             }
           }
-          const s1 = String(parsed.serial_number || '').trim().toUpperCase();
-          const s2 = String(parsed.certificate_no || parsed.certificate_number || '').trim().toUpperCase();
-          if (s1 === clean || s2 === clean) {
-            return parsed;
+          return parsed;
+        }
+
+        // 2. Structured query lookup
+        const queryUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${dbId}/documents:runQuery`;
+        const queryBody = JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: col }],
+            limit: 30,
+          },
+        });
+
+        const qRes = await fetchJson(queryUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(queryBody) },
+          body: queryBody,
+        });
+
+        if (qRes.ok && Array.isArray(qRes.data)) {
+          for (const entry of qRes.data) {
+            if (entry.document && entry.document.fields) {
+              const fields = entry.document.fields;
+              const parsed = {};
+              for (const [k, v] of Object.entries(fields)) {
+                if (v.stringValue !== undefined) parsed[k] = v.stringValue;
+                else if (v.integerValue !== undefined) parsed[k] = parseInt(v.integerValue, 10);
+                else if (v.booleanValue !== undefined) parsed[k] = v.booleanValue;
+                else if (v.arrayValue && v.arrayValue.values) {
+                  parsed[k] = v.arrayValue.values.map((item) => item.stringValue || item.integerValue || '');
+                }
+              }
+              const s1 = String(parsed.serial_number || '').trim().toUpperCase();
+              const s2 = String(parsed.certificate_no || parsed.certificate_number || '').trim().toUpperCase();
+              const s3 = String(parsed.srn || parsed.id_number || parsed.license_no || parsed.license_number || '').trim().toUpperCase();
+              if (s1 === clean || s2 === clean || s3 === clean) {
+                return parsed;
+              }
+            }
           }
         }
+      } catch (err) {
+        // Continue fallback search
       }
     }
-  } catch (err) {
-    console.error('[Firestore API lookup error]', err);
   }
   return null;
 }
@@ -251,7 +265,45 @@ export default async function handler(req, res) {
       });
     }
 
+    const doc = await fetchFromFirestore(serialNumber, selectedType);
+
     if (selectedType === 'id') {
+      if (doc) {
+        const fullName = doc.full_name || doc.name || 'Unknown';
+        const parts = fullName.split(/\s+/).filter(Boolean);
+        const firstName = doc.first_name || parts[0] || 'Unknown';
+        const lastName = doc.last_name || (parts.length > 1 ? parts[parts.length - 1] : '');
+        const middleName = doc.middle_name || (parts.length > 2 ? parts.slice(1, -1).join(' ') : '');
+
+        const idRecordData = {
+          srn: String(doc.srn || doc.serial_number || doc.id_number || serialNumber),
+          serial_number: String(doc.serial_number || doc.srn || serialNumber),
+          first_name: firstName,
+          middle_name: middleName,
+          last_name: lastName,
+          full_name: fullName,
+          name: fullName,
+          date_issued: doc.date_issued || doc.issue_date || '',
+          issue_date: doc.date_issued || doc.issue_date || '',
+          date_expiry: doc.date_expiry || doc.expiry_date || '',
+          expiry_date: doc.date_expiry || doc.expiry_date || '',
+          rank: doc.rank || doc.capacity || doc.function || doc.title_of_certificate || 'N/A',
+          regulation: doc.regulation || doc.regulation_no || 'N/A',
+          image_url: doc.image_url || doc.photo || doc.document_url || '/officer_image/adamu.png',
+          photo: doc.photo || doc.image_url || doc.document_url || '/officer_image/adamu.png',
+          status: doc.status || 'VALID',
+          verification_type: 'id',
+          document_type: 'MARINA PROFESSIONAL LICENSE ID',
+        };
+
+        return sendJson(res, 200, {
+          status: 200,
+          ok: true,
+          data: idRecordData,
+          message: 'Document found',
+        });
+      }
+
       return sendJson(res, 404, {
         status: 404,
         ok: false,
@@ -262,6 +314,14 @@ export default async function handler(req, res) {
     }
 
     if (selectedType === 'sirb') {
+      if (doc) {
+        return sendJson(res, 200, {
+          status: 200,
+          ok: true,
+          data: doc,
+          message: 'Document found',
+        });
+      }
       return sendJson(res, 404, {
         status: 404,
         ok: false,
@@ -270,8 +330,6 @@ export default async function handler(req, res) {
         error: 'SIRB not found',
       });
     }
-
-    const doc = await fetchFromFirestore(serialNumber);
 
     if (doc) {
       const fullName = doc.full_name || doc.name || 'Unknown';

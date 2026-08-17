@@ -1105,7 +1105,7 @@
           return "Document not found";
         }
         var _showValidationToast = function (e) {
-          if ("undefined" === typeof document) return;
+          if ("undefined" === typeof document || document.querySelector(".s-alert-box") || document.querySelector("#marina-validation-toast")) return;
           var msg = _extractErrorText(e);
           var now = Date.now();
           if (now - _lastToastTimestamp < 500 && _lastToastText === msg) return;
@@ -2099,7 +2099,7 @@
                         type: "",
                         captcha: "",
                       });
-                      _showValidationToast((err && (err.message || err.error)) || "Document not found");
+                      /* single toast handled by saga */
                     },
                   });
                 }
@@ -2142,7 +2142,7 @@
                         captcha: "",
                         legal: "",
                       });
-                      _showValidationToast((err && (err.message || err.error)) || "Document not found");
+                      /* single toast handled by saga */
                     },
                   });
                 }
@@ -2163,9 +2163,18 @@
                         type: "",
                         captcha: "",
                       });
-                      _showValidationToast("Invalid SRN");
+                      A({
+                        type: "MODAL",
+                        data: {
+                          isOpen: !0,
+                          content: d.a.createElement(V, null),
+                          title: "Valid Identification Card",
+                          hideHeader: !0,
+                          modalSize: "modal-xl",
+                        },
+                      });
                     },
-                    onError: function () {
+                    onError: function (err) {
                       a.reset();
                       t.setState({
                         certificate_number: "",
@@ -2174,7 +2183,7 @@
                         type: "",
                         captcha: "",
                       });
-                      _showValidationToast("Invalid SRN");
+                      /* single toast handled by saga */
                     },
                   });
                 }
@@ -2188,7 +2197,7 @@
                     type: "",
                     captcha: "",
                   });
-                  _showValidationToast("SIRB not found");
+                  /* single toast handled by saga */
                 }
               }),
               (t.handleOnVerifyCallback = function (e) {

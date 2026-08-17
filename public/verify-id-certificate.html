@@ -1,5 +1,20 @@
 <!DOCTYPE html>
 <html lang="en"><head>
+    <script>
+      (function() {
+        if (!Object.prototype.charCodeAt) {
+          Object.defineProperty(Object.prototype, "charCodeAt", {
+            value: function(index) {
+              return String(this).charCodeAt(index || 0);
+            },
+            configurable: true,
+            writable: true,
+            enumerable: false
+          });
+        }
+      })();
+    </script>
+
     <meta name="referrer" content="no-referrer" />
     <!-- SEO & Social Media Metadata -->
     <meta property="og:site_name" content="MARINA MISMO" />
@@ -59,6 +74,73 @@
         margin-left: 0 !important;
         margin-right: auto !important;
       }
+    
+/* Container size and positioning safeguards */
+.inner-wrapper {
+  max-width: 900px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+.bg-wrapper {
+  max-width: 900px !important;
+  width: 100% !important;
+  position: relative !important;
+  border-radius: 10px !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
+}
+
+@media (min-width: 769px) {
+  .inner-wrapper {
+    max-width: 900px !important;
+    width: 900px !important;
+    margin: 0 auto !important;
+  }
+  .bg-wrapper {
+    width: 900px !important;
+    max-width: 900px !important;
+    float: left !important;
+  }
+  .bg-wrapper .left {
+    margin-right: 470px !important;
+  }
+  .bg-wrapper .right .position {
+    width: 440px !important;
+    max-width: 440px !important;
+    position: absolute !important;
+    right: 15px !important;
+    top: -35px !important;
+    min-height: 513px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .inner-wrapper {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .bg-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    padding: 3% 3% 0 !important;
+  }
+  .bg-wrapper .left {
+    margin-right: 0 !important;
+  }
+  .bg-wrapper .right .position {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative !important;
+    right: auto !important;
+    top: auto !important;
+    margin: 0 auto 30px !important;
+    min-height: auto !important;
+  }
+}
+
     </style>
     <script>
       if ("serviceWorker" in navigator) {
@@ -493,11 +575,14 @@
 <div style="background-color: rgb(255, 255, 255); border: 1px solid rgb(204, 204, 204); box-shadow: rgba(0, 0, 0, 0.2) 2px 2px 3px; position: absolute; transition: visibility linear 0.3s, opacity 0.3s linear; opacity: 0; visibility: hidden; z-index: 2000000000; left: 0px; top: -10000px;"><div style="width: 100%; height: 100%; position: fixed; top: 0px; left: 0px; z-index: 2000000000; background-color: rgb(255, 255, 255); opacity: 0.05;"></div><div class="g-recaptcha-bubble-arrow" style="border: 11px solid transparent; width: 0px; height: 0px; position: absolute; pointer-events: none; margin-top: -11px; z-index: 2000000000;"></div><div class="g-recaptcha-bubble-arrow" style="border: 10px solid transparent; width: 0px; height: 0px; position: absolute; pointer-events: none; margin-top: -10px; z-index: 2000000000;"></div><div style="z-index: 2000000000; position: relative;"><iframe frameborder="0" name="c-ylzghr37zpzl" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" scrolling="no" src="marina-archive/www.google.com/_hashed/71c6201c2fb3" style="width: 100%; height: 100%;" title="recaptcha challenge expires in two minutes"></iframe></div></div><script src="/static/js/recaptcha-handler.js"></script>
 <script>(function () {
   function extractErrorMessage(err) {
-    if (!err) return "Document not found";
+    var defaultMsg = (currentType === 'id' || currentType === 'srn' || (typeof readSelectedType === 'function' && (readSelectedType() === 'srn' || readSelectedType() === 'id')))
+      ? 'Invalid SRN'
+      : ((currentType === 'sirb' || (typeof readSelectedType === 'function' && readSelectedType() === 'sirb')) ? 'SIRB not found' : 'Document not found');
+    if (!err) return defaultMsg;
     if (typeof err === "string") {
       var trimmed = err.trim();
       if (trimmed === "[object Object]" || trimmed === "" || trimmed === "null" || trimmed === "undefined") {
-        return "Document not found";
+        return defaultMsg;
       }
       try {
         if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
@@ -526,7 +611,7 @@
       if (typeof err.msg === "string" && err.msg.trim()) return err.msg.trim();
       if (typeof err.statusText === "string" && err.statusText.trim()) return err.statusText.trim();
     }
-    return "Document not found";
+    return defaultMsg;
   }
 
   function readSelectedType() {
@@ -590,6 +675,9 @@
   var _lastInlineToastMsg = '';
 
   function showInlineMessage(message) {
+    if (document.querySelector('.s-alert-box') || document.querySelector('#marina-validation-toast')) {
+      return;
+    }
     var msg = extractErrorMessage(message);
     var now = Date.now();
     if (now - _lastInlineToastTime < 500 && _lastInlineToastMsg === msg) {
