@@ -373,7 +373,13 @@ export default async function handler(req, res) {
         verification_type: selectedType,
       };
 
-   
+    return sendJson(res, 200, {
+        status: 200,
+        ok: true,
+        data: recordData,
+        message: 'Document found',
+      });
+    }
 
     return sendJson(res, 404, {
       status: 404,
