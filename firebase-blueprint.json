@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "Certificate": {
+      "title": "Certificate",
+      "description": "MARINA Certificate of Competency or Proficiency record",
+      "type": "object",
+      "properties": {
+        "serial_number": { "type": "string" },
+        "certificate_number": { "type": "string" },
+        "full_name": { "type": "string" },
+        "issue_date": { "type": "string" },
+        "expiry_date": { "type": "string" },
+        "status": { "type": "string" },
+        "capacity": { "type": "string" },
+        "regulation_no": { "type": "string" },
+        "verification_type": { "type": "string" }
+      },
+      "required": ["serial_number", "full_name"]
+    },
+    "License": {
+      "title": "License",
+      "description": "MARINA Professional License ID record",
+      "type": "object",
+      "properties": {
+        "srn": { "type": "string" },
+        "serial_number": { "type": "string" },
+        "full_name": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["srn", "full_name"]
+    }
+  },
+  "firestore": {
+    "/certificates/{certificateId}": {
+      "schema": "Certificate",
+      "description": "Collection of verified maritime certificates"
+    },
+    "/licenses/{licenseId}": {
+      "schema": "License",
+      "description": "Collection of MARINA professional license IDs (currently empty)"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/health", "destination": "/api/health" },
+    { "source": "/api/verify-certificate", "destination": "/api/verify-certificate" },
+    { "source": "/pub/archive/certificate/verify", "destination": "/api/verify-certificate" },
+    { "source": "/pub/archive/certificate/legal/verify", "destination": "/api/verify-certificate" },
+    { "source": "/pub/archive/id_card/verify", "destination": "/api/verify-certificate" },
+    { "source": "/pub/sirb/verify", "destination": "/api/verify-certificate" },
+    { "source": "/pub/verify", "destination": "/api/verify-certificate" },
+    { "source": "/pub/archive/(.*)", "destination": "/api/verify-certificate" },
+    { "source": "/pub/(.*)", "destination": "/api/verify-certificate" },
+    { "source": "/api/verify-recaptcha", "destination": "/api/verify-recaptcha" },
+    { "source": "/verify-recaptcha", "destination": "/verify-recaptcha.html" },
+    { "source": "/signin", "destination": "/signin.html" },
+    { "source": "/register-type", "destination": "/register-type.html" },
+    { "source": "/verify-id-certificate", "destination": "/verify-id-certificate.html" },
+    { "source": "/verify-qr-code", "destination": "/verify-qr-code.html" },
+    { "source": "/examination-schedules", "destination": "/examination-schedules.html" },
+    { "source": "/done", "destination": "/done.html" }
+  ]
+}
