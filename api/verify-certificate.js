@@ -381,7 +381,13 @@ export default async function handler(req, res) {
       });
     }
 
-   
+    return sendJson(res, 404, {
+      status: 404,
+      ok: false,
+      data: {},
+      message: 'Document not found',
+     
+    });
   } catch (globalError) {
     console.error('[Unhandled API Error in verify-certificate]', globalError);
     return sendJson(res, 500, {
