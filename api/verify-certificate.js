@@ -386,7 +386,7 @@ export default async function handler(req, res) {
       ok: false,
       data: {},
       message: 'Document not found',
-      error: 'Document not found',
+     
     });
   } catch (globalError) {
     console.error('[Unhandled API Error in verify-certificate]', globalError);
