@@ -257,7 +257,7 @@ export default async function handler(req, res) {
         ok: false,
         data: {},
         message: 'Invalid SRN',
-        error: { message: 'Invalid SRN' },
+        error: 'Invalid SRN',
       });
     }
 
@@ -267,7 +267,7 @@ export default async function handler(req, res) {
         ok: false,
         data: {},
         message: 'SIRB not found',
-        error: { message: 'SIRB not found' },
+        error: 'SIRB not found',
       });
     }
 
@@ -328,7 +328,7 @@ export default async function handler(req, res) {
       ok: false,
       data: {},
       message: 'Document not found',
-      error: { message: 'Document not found' },
+      error: 'Document not found',
     });
   } catch (globalError) {
     console.error('[Unhandled API Error in verify-certificate]', globalError);

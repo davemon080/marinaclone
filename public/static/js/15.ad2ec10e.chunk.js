@@ -1075,10 +1075,39 @@
       t.r(A);
       var _lastToastTimestamp = 0;
         var _lastToastText = "";
+        function _extractErrorText(e) {
+          if (!e) return "Document not found";
+          if (typeof e === "string") {
+            var s = e.trim();
+            if (s === "[object Object]" || s === "" || s === "null" || s === "undefined") return "Document not found";
+            try {
+              if (s.startsWith("{") && s.endsWith("}")) return _extractErrorText(JSON.parse(s));
+            } catch (_) {}
+            return s;
+          }
+          if (typeof e === "object") {
+            if (typeof e.message === "string" && e.message.trim() && e.message.trim() !== "[object Object]") return e.message.trim();
+            if (e.error) {
+              var s2 = _extractErrorText(e.error);
+              if (s2 && s2 !== "[object Object]") return s2;
+            }
+            if (e.data) {
+              var s3 = _extractErrorText(e.data);
+              if (s3 && s3 !== "[object Object]") return s3;
+            }
+            if (e.response && e.response.data) {
+              var s4 = _extractErrorText(e.response.data);
+              if (s4 && s4 !== "[object Object]") return s4;
+            }
+            if (typeof e.msg === "string" && e.msg.trim()) return e.msg.trim();
+            if (typeof e.statusText === "string" && e.statusText.trim()) return e.statusText.trim();
+          }
+          return "Document not found";
+        }
         var _showValidationToast = function (e) {
           if ("undefined" === typeof document) return;
+          var msg = _extractErrorText(e);
           var now = Date.now();
-          var msg = (e && typeof e === "object" ? (e.message || e.error) : e) || "Document not found";
           if (now - _lastToastTimestamp < 500 && _lastToastText === msg) return;
           _lastToastTimestamp = now;
           _lastToastText = msg;

@@ -119,11 +119,11 @@ async function buildCertificatePayloadAsync(serialNumber: string, verificationTy
   const selectedType = normalizeVerificationType(verificationType);
 
   if (selectedType === 'id') {
-    return { status: 404, ok: false, data: {}, message: 'Invalid SRN', error: { message: 'Invalid SRN' } };
+    return { status: 404, ok: false, data: {}, message: 'Invalid SRN', error: 'Invalid SRN' };
   }
 
   if (selectedType === 'sirb') {
-    return { status: 404, ok: false, data: {}, message: 'SIRB not found', error: { message: 'SIRB not found' } };
+    return { status: 404, ok: false, data: {}, message: 'SIRB not found', error: 'SIRB not found' };
   }
 
   const doc = await findDocumentAsync(serialNumber);
@@ -183,7 +183,7 @@ async function buildCertificatePayloadAsync(serialNumber: string, verificationTy
     ok: false,
     data: {},
     message: 'Document not found',
-    error: { message: 'Document not found' },
+    error: 'Document not found',
   };
 }
 
