@@ -18,7 +18,7 @@ const PRECACHE_ASSETS = [
   '/static/js/17.3d62d1c1.chunk.js',
   '/static/js/15.ad2ec10e.chunk.js',
   'https://iili.io/Cs3uV0g.png',
-  'https://iili.io/Cs3Y28g.jpg'
+  'https://iili.io/CsfJmhJ.jpg'
 ];
 
 self.addEventListener('install', (event) => {

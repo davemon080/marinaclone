@@ -1073,12 +1073,24 @@
     630: function (e, A, t) {
       "use strict";
       t.r(A);
-      var _showValidationToast = function (e) {
+      var _lastToastTimestamp = 0;
+        var _lastToastText = "";
+        var _showValidationToast = function (e) {
           if ("undefined" === typeof document) return;
-          var A = document.getElementById("marina-validation-toast");
-          if (A && A.parentNode) A.parentNode.removeChild(A);
+          var now = Date.now();
+          var msg = (e && typeof e === "object" ? (e.message || e.error) : e) || "Document not found";
+          if (now - _lastToastTimestamp < 500 && _lastToastText === msg) return;
+          _lastToastTimestamp = now;
+          _lastToastText = msg;
+
+          var existing = document.querySelectorAll("#marina-validation-toast, .marina-validation-toast, #marina-verify-inline-message");
+          for (var i = 0; i < existing.length; i++) {
+            if (existing[i].parentNode) existing[i].parentNode.removeChild(existing[i]);
+          }
+
           var t = document.createElement("div");
           t.id = "marina-validation-toast";
+          t.className = "marina-validation-toast";
           t.style.position = "fixed";
           t.style.top = "20px";
           t.style.right = "20px";
@@ -1104,7 +1116,7 @@
           l.style.marginRight = "8px";
           l.style.whiteSpace = "normal";
           l.style.lineHeight = "1.3";
-          l.textContent = e || "Document not found";
+          l.textContent = msg;
           var n = document.createElement("button");
           n.type = "button";
           n.setAttribute("aria-label", "Close");
@@ -1163,7 +1175,7 @@
           height: "570px",
           fontSize: "16px",
           fontWeight: "bold",
-          backgroundImage: "url(https://iili.io/Cs3Y28g.jpg)",
+          backgroundImage: "url(https://iili.io/CsfJmhJ.jpg)",
           backgroundSize: "cover",
           borderRadius: "3px",
           boxShadow: "2px 3px 10px #888888",

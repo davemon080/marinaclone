@@ -44,14 +44,20 @@
           height: auto !important;
         }
       }
-      .recaptcha-container, #g-recaptcha {
-        margin: 15px auto !important;
+      .index-wrapper {
+        background: #0f237a url(https://iili.io/CsfJmhJ.jpg) no-repeat center center !important;
+        background-size: cover !important;
+      }
+      .recaptcha-container, #g-recaptcha, .form-wrapper #g-recaptcha, .form-container #g-recaptcha, .position #g-recaptcha {
+        margin: 15px 0 !important;
         display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
         width: 100% !important;
         max-width: 304px !important;
         min-height: 78px !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
       }
     </style>
     <script>
@@ -175,14 +181,20 @@
           height: auto !important;
         }
       }
-      .recaptcha-container, #g-recaptcha {
-        margin: 15px auto !important;
+      .index-wrapper {
+        background: #0f237a url(https://iili.io/CsfJmhJ.jpg) no-repeat center center !important;
+        background-size: cover !important;
+      }
+      .recaptcha-container, #g-recaptcha, .form-wrapper #g-recaptcha, .form-container #g-recaptcha, .position #g-recaptcha {
+        margin: 15px 0 !important;
         display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
         width: 100% !important;
         max-width: 304px !important;
         min-height: 78px !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
       }
     </style>
 
@@ -691,4 +703,166 @@
   document.addEventListener('DOMContentLoaded', refreshType);
   refreshType();
 })();
-</script></body></html>
+</script></body></html<script>(function () {
+  function readSelectedType() {
+    var select = document.querySelector('select[name="type"], select[name="verification_type"], select[name="verificationType"]');
+    if (select && select.value) {
+      return select.value;
+    }
+    var checked = document.querySelector('input[name="type"]:checked, input[name="verification_type"]:checked, input[name="verificationType"]:checked');
+    return checked ? checked.value : '';
+  }
+  function addTypeParam(url, type) {
+    if (!type) {
+      return url;
+    }
+    try {
+      var parsed = new URL(url, window.location.origin);
+      if (!parsed.searchParams.has('verification_type')) {
+        parsed.searchParams.set('verification_type', type);
+      }
+      return parsed.toString();
+    } catch (error) {
+      return url + (url.indexOf('?') === -1 ? '?' : '&') + 'verification_type=' + encodeURIComponent(type);
+    }
+  }
+  function rewriteVerifyUrl(url) {
+    if (typeof url !== 'string') {
+      return url;
+    }
+    if (/api-mismo\.marina\.gov\.ph/i.test(url)) {
+      return '/api/verify-certificate';
+    }
+    if (/\/api\/verify-certificate|\/pub\/archive\/certificate\/verify/i.test(url)) {
+      return url;
+    }
+    return url;
+  }
+  var currentType = '';
+  function refreshType() {
+    currentType = readSelectedType();
+  }
+  document.addEventListener('change', function (event) {
+    if (event.target && /type|verification_type/i.test(event.target.name)) {
+      refreshType();
+    }
+  });
+  function clearInlineMessage() {
+    var existing = document.querySelectorAll('#marina-validation-toast, .marina-validation-toast, #marina-verify-inline-message');
+    for (var i = 0; i < existing.length; i++) {
+      if (existing[i].parentNode) {
+        existing[i].parentNode.removeChild(existing[i]);
+      }
+    }
+  }
+  var _lastInlineToastTime = 0;
+  var _lastInlineToastMsg = '';
+  function showInlineMessage(message) {
+    var now = Date.now();
+    var msg = (message && typeof message === 'object' ? (message.message || message.error) : message) || 'Document not found';
+    if (now - _lastInlineToastTime < 500 && _lastInlineToastMsg === msg) {
+      return;
+    }
+    _lastInlineToastTime = now;
+    _lastInlineToastMsg = msg;
+    clearInlineMessage();
+    var target = document.body;
+    if (!target) {
+      return;
+    }
+    var banner = document.createElement('div');
+    banner.id = 'marina-validation-toast';
+    banner.className = 'marina-validation-toast';
+    banner.style.position = 'fixed';
+    banner.style.top = '20px';
+    banner.style.right = '20px';
+    banner.style.zIndex = '99999';
+    banner.style.minWidth = '180px';
+    banner.style.maxWidth = '340px';
+    banner.style.padding = '12px 16px';
+    banner.style.borderRadius = '4px';
+    banner.style.backgroundColor = '#E74C3C';
+    banner.style.color = '#ffffff';
+    banner.style.fontWeight = '500';
+    banner.style.fontSize = '15px';
+    banner.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
+    banner.style.opacity = '0';
+    banner.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    banner.style.transform = 'translateX(20px)';
+    banner.style.display = 'flex';
+    banner.style.alignItems = 'center';
+    banner.style.justifyContent = 'space-between';
+    var textSpan = document.createElement('div');
+    textSpan.style.flex = '1';
+    textSpan.style.marginRight = '8px';
+    textSpan.style.whiteSpace = 'normal';
+    textSpan.style.lineHeight = '1.3';
+    textSpan.textContent = msg;
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.textContent = '×';
+    closeBtn.style.background = 'transparent';
+    closeBtn.style.border = 'none';
+    closeBtn.style.color = '#fff';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.style.fontSize = '16px';
+    closeBtn.style.lineHeight = '1';
+    closeBtn.style.padding = '0';
+    closeBtn.style.marginLeft = '4px';
+    closeBtn.onclick = function () {
+      banner.style.opacity = '0';
+      banner.style.transform = 'translateX(24px)';
+      setTimeout(function () { banner.remove(); }, 300);
+    };
+    banner.appendChild(textSpan);
+    banner.appendChild(closeBtn);
+    target.appendChild(banner);
+    requestAnimationFrame(function () {
+      banner.style.opacity = '1';
+      banner.style.transform = 'translateX(0)';
+    });
+    setTimeout(function () {
+      banner.style.opacity = '0';
+      banner.style.transform = 'translateX(20px)';
+      setTimeout(function () {
+        clearInlineMessage();
+      }, 300);
+    }, 4000);
+  }
+  window._showValidationToast = showInlineMessage;
+  var originalOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (method, url) {
+    if (typeof url === 'string' && /\/api\/verify-certificate|\/pub\/archive\/certificate\/verify|api-mismo\.marina\.gov\.ph/i.test(url)) {
+      var type = currentType || readSelectedType();
+      url = rewriteVerifyUrl(url);
+      if (type) {
+        url = addTypeParam(url, type);
+      }
+      arguments[1] = url;
+    }
+    return originalOpen.apply(this, arguments);
+  };
+  var originalFetch = window.fetch;
+  if (originalFetch) {
+    window.fetch = function (input, init) {
+      var target = input;
+      var url = typeof target === 'string' ? target : target && target.url;
+      if (typeof url === 'string' && /\/api\/verify-certificate|\/pub\/archive\/certificate\/verify|api-mismo\.marina\.gov\.ph/i.test(url)) {
+        var type = currentType || readSelectedType();
+        url = rewriteVerifyUrl(url);
+        if (type) {
+          url = addTypeParam(url, type);
+        }
+        if (typeof input === 'string') {
+          target = url;
+        } else if (input && typeof input === 'object' && input.url) {
+          target = Object.assign({}, input, { url: url });
+        }
+      }
+      return originalFetch.call(this, target, init);
+    };
+  }
+  document.addEventListener('DOMContentLoaded', refreshType);
+  refreshType();
+})();</script></body></html>
