@@ -572,4 +572,264 @@
 }([])</script>
 <script src="/static/js/12.40516b25.chunk.js"></script>
 <script src="/static/js/main.1db8a6a0.chunk.js"></script><div class="ReactModalPortal"></div>
-<div style="background-color: rgb(255, 255, 255); border: 1px solid rgb(204, 204, 204); box-shadow: rgba(0, 0, 0, 0.2) 2px 2px 3px; position: absolute; transition: visibility linear 0.3s, opacity 0.3s linear; opacity: 0; visibility: hidden; z-index: 2000000000; left: 0px; top: -10000px;"><div style="width: 100%; height: 100%; position: fixed; top: 0px; left: 0px; z-index: 2000000000; background-color: rgb(255, 255, 255); opacity: 0.05;"></div><div class="g-recaptcha-bubble-arrow" style="border: 11px solid transparent; width: 0px; height: 0px; position: absolute; pointer-events: none; margin-top: -11px; z-index: 2000000000;"></div><div class="g-recaptcha-bubble-arrow" style="border: 10px solid transparent; width: 0px; height: 0px; position: absolute; pointer-events: none; margin-top: -10px; z-index: 2000000000;"></div><div style="z-index: 2000000000; position: relative;"><iframe frameborder="0" name="c-n6djqyw9g21c" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" scrolling="no" src="marina-archive/www.google.com/_hashed/48df973efc56" style="width: 100%; height: 100%;" title="recaptcha challenge expires in two minutes"></iframe></div></div><script src="/static/js/recaptcha-handler.js"></script></body></html>
+<div style="background-color: rgb(255, 255, 255); border: 1px solid rgb(204, 204, 204); box-shadow: rgba(0, 0, 0, 0.2) 2px 2px 3px; position: absolute; transition: visibility linear 0.3s, opacity 0.3s linear; opacity: 0; visibility: hidden; z-index: 2000000000; left: 0px; top: -10000px;"><div style="width: 100%; height: 100%; position: fixed; top: 0px; left: 0px; z-index: 2000000000; background-color: rgb(255, 255, 255); opacity: 0.05;"></div><div class="g-recaptcha-bubble-arrow" style="border: 11px solid transparent; width: 0px; height: 0px; position: absolute; pointer-events: none; margin-top: -11px; z-index: 2000000000;"></div><div class="g-recaptcha-bubble-arrow" style="border: 10px solid transparent; width: 0px; height: 0px; position: absolute; pointer-events: none; margin-top: -10px; z-index: 2000000000;"></div><div style="z-index: 2000000000; position: relative;"><iframe frameborder="0" name="c-n6djqyw9g21c" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" scrolling="no" src="marina-archive/www.google.com/_hashed/48df973efc56" style="width: 100%; height: 100%;" title="recaptcha challenge expires in two minutes"></iframe></div></div><script src="/static/js/recaptcha-handler.js"></script>
+<script>(function () {
+  function extractErrorMessage(err) {
+    var defaultMsg = (currentType === 'id' || currentType === 'srn' || (typeof readSelectedType === 'function' && (readSelectedType() === 'srn' || readSelectedType() === 'id')))
+      ? 'Invalid SRN'
+      : ((currentType === 'sirb' || (typeof readSelectedType === 'function' && readSelectedType() === 'sirb')) ? 'SIRB not found' : 'Document not found');
+    if (!err) return defaultMsg;
+    if (typeof err === "string") {
+      var trimmed = err.trim();
+      if (trimmed === "[object Object]" || trimmed === "" || trimmed === "null" || trimmed === "undefined") {
+        return defaultMsg;
+      }
+      try {
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+          var parsed = JSON.parse(trimmed);
+          return extractErrorMessage(parsed);
+        }
+      } catch (e) {}
+      return trimmed;
+    }
+    if (typeof err === "object") {
+      if (typeof err.message === "string" && err.message.trim() && err.message.trim() !== "[object Object]") {
+        return err.message.trim();
+      }
+      if (err.error) {
+        var subErr = extractErrorMessage(err.error);
+        if (subErr && subErr !== "[object Object]") return subErr;
+      }
+      if (err.data) {
+        var subData = extractErrorMessage(err.data);
+        if (subData && subData !== "[object Object]") return subData;
+      }
+      if (err.response && err.response.data) {
+        var subResp = extractErrorMessage(err.response.data);
+        if (subResp && subResp !== "[object Object]") return subResp;
+      }
+      if (typeof err.msg === "string" && err.msg.trim()) return err.msg.trim();
+      if (typeof err.statusText === "string" && err.statusText.trim()) return err.statusText.trim();
+    }
+    return defaultMsg;
+  }
+
+  function readSelectedType() {
+    var select = document.querySelector('select[name="type"], select[name="verification_type"], select[name="verificationType"]');
+    if (select && select.value) {
+      return select.value;
+    }
+    var checked = document.querySelector('input[name="type"]:checked, input[name="verification_type"]:checked, input[name="verificationType"]:checked');
+    return checked ? checked.value : '';
+  }
+
+  function addTypeParam(url, type) {
+    if (!type) {
+      return url;
+    }
+    try {
+      var parsed = new URL(url, window.location.origin);
+      if (!parsed.searchParams.has('verification_type')) {
+        parsed.searchParams.set('verification_type', type);
+      }
+      return parsed.toString();
+    } catch (error) {
+      return url + (url.indexOf('?') === -1 ? '?' : '&') + 'verification_type=' + encodeURIComponent(type);
+    }
+  }
+
+  function rewriteVerifyUrl(url) {
+    if (typeof url !== 'string') {
+      return url;
+    }
+    if (/\/api\/verify-recaptcha|\/verify-recaptcha/i.test(url)) {
+      return url;
+    }
+    if (/\/pub\/archive\/|\/pub\/sirb\/|api-mismo\.marina\.gov\.ph|\/pub\/verify/i.test(url)) {
+      return '/api/verify-certificate';
+    }
+    return url;
+  }
+
+  var currentType = '';
+  function refreshType() {
+    currentType = readSelectedType();
+  }
+
+  document.addEventListener('change', function (event) {
+    if (event.target && /type|verification_type/i.test(event.target.name)) {
+      refreshType();
+    }
+  });
+
+  function clearInlineMessage() {
+    var existing = document.querySelectorAll('#marina-validation-toast, .marina-validation-toast, #marina-verify-inline-message');
+    for (var i = 0; i < existing.length; i++) {
+      if (existing[i].parentNode) {
+        existing[i].parentNode.removeChild(existing[i]);
+      }
+    }
+  }
+
+  var _lastInlineToastTime = 0;
+  var _lastInlineToastMsg = '';
+
+  function showInlineMessage(message) {
+    var msg = extractErrorMessage(message);
+    var now = Date.now();
+
+    if (now - _lastInlineToastTime < 2500) {
+      return;
+    }
+    if (document.querySelector('.s-alert-box') || document.querySelector('#marina-validation-toast')) {
+      return;
+    }
+
+    _lastInlineToastTime = now;
+    _lastInlineToastMsg = msg;
+
+    clearInlineMessage();
+    var target = document.body;
+    if (!target) {
+      return;
+    }
+    var banner = document.createElement('div');
+    banner.id = 'marina-validation-toast';
+    banner.className = 'marina-validation-toast';
+    banner.style.position = 'fixed';
+    banner.style.top = '20px';
+    banner.style.right = '20px';
+    banner.style.zIndex = '99999';
+    banner.style.minWidth = '180px';
+    banner.style.maxWidth = '340px';
+    banner.style.padding = '12px 16px';
+    banner.style.borderRadius = '4px';
+    banner.style.backgroundColor = '#E74C3C';
+    banner.style.color = '#ffffff';
+    banner.style.fontWeight = '500';
+    banner.style.fontSize = '15px';
+    banner.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
+    banner.style.opacity = '0';
+    banner.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    banner.style.transform = 'translateX(20px)';
+    banner.style.display = 'flex';
+    banner.style.alignItems = 'center';
+    banner.style.justifyContent = 'space-between';
+
+    var textSpan = document.createElement('div');
+    textSpan.style.flex = '1';
+    textSpan.style.marginRight = '8px';
+    textSpan.style.whiteSpace = 'normal';
+    textSpan.style.lineHeight = '1.3';
+    textSpan.textContent = msg;
+
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.textContent = '×';
+    closeBtn.style.background = 'transparent';
+    closeBtn.style.border = 'none';
+    closeBtn.style.color = '#fff';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.style.fontSize = '16px';
+    closeBtn.style.lineHeight = '1';
+    closeBtn.style.padding = '0';
+    closeBtn.style.marginLeft = '4px';
+    closeBtn.onclick = function () {
+      banner.style.opacity = '0';
+      banner.style.transform = 'translateX(24px)';
+      setTimeout(function () { banner.remove(); }, 300);
+    };
+
+    banner.appendChild(textSpan);
+    banner.appendChild(closeBtn);
+    target.appendChild(banner);
+
+    requestAnimationFrame(function () {
+      banner.style.opacity = '1';
+      banner.style.transform = 'translateX(0)';
+    });
+
+    setTimeout(function () {
+      banner.style.opacity = '0';
+      banner.style.transform = 'translateX(20px)';
+      setTimeout(function () {
+        clearInlineMessage();
+      }, 300);
+    }, 4000);
+  }
+
+  window._showValidationToast = showInlineMessage;
+
+  var _activeVerifyPromise = null;
+  var _lastVerifyTime = 0;
+  var _lastVerifyKey = '';
+
+  var originalOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (method, url) {
+    if (typeof url === 'string' && (/\/api\/verify-certificate|\/pub\/archive\/|\/pub\/sirb\/|api-mismo\.marina\.gov\.ph/i.test(url))) {
+      var type = currentType || readSelectedType();
+      url = rewriteVerifyUrl(url);
+      if (type) {
+        url = addTypeParam(url, type);
+      }
+      arguments[1] = url;
+    }
+    return originalOpen.apply(this, arguments);
+  };
+
+  var originalFetch = window.fetch;
+  if (originalFetch) {
+    window.fetch = function (input, init) {
+      var target = input;
+      var url = typeof target === 'string' ? target : target && target.url;
+      if (typeof url === 'string' && (/\/api\/verify-certificate|\/pub\/archive\/|\/pub\/sirb\/|api-mismo\.marina\.gov\.ph/i.test(url))) {
+        var type = currentType || readSelectedType();
+        url = rewriteVerifyUrl(url);
+        if (type) {
+          url = addTypeParam(url, type);
+        }
+        if (typeof input === 'string') {
+          target = url;
+        } else if (input && typeof input === 'object' && input.url) {
+          target = Object.assign({}, input, { url: url });
+        }
+
+        var key = url + '|' + (init && init.body ? String(init.body) : '');
+        var now = Date.now();
+        if (_activeVerifyPromise && _lastVerifyKey === key && (now - _lastVerifyTime < 1000)) {
+          return _activeVerifyPromise;
+        }
+
+        _lastVerifyKey = key;
+        _lastVerifyTime = now;
+        _activeVerifyPromise = originalFetch.call(this, target, init).finally(function () {
+          setTimeout(function () {
+            if (_lastVerifyKey === key) {
+              _activeVerifyPromise = null;
+            }
+          }, 300);
+        });
+        return _activeVerifyPromise;
+      }
+      return originalFetch.call(this, target, init);
+    };
+  }
+
+  var _lastSubmitClickTime = 0;
+  document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest && e.target.closest('button, input[type="submit"], .btn-danger, .btn-primary, .btn-success');
+    if (btn && (btn.textContent || '').toLowerCase().indexOf('verify') !== -1) {
+      var now = Date.now();
+      if (now - _lastSubmitClickTime < 600) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      _lastSubmitClickTime = now;
+    }
+  }, true);
+
+  document.addEventListener('DOMContentLoaded', refreshType);
+  refreshType();
+})();</script></body></html>

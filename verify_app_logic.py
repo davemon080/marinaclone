@@ -49,25 +49,25 @@ def run_tests():
     p1 = (s == 200 and "ok" in b)
     print(f"[{'PASS' if p1 else 'FAIL'}] Health check (/api/health) -> {s} (Body: {b.strip()})")
 
-    # Certificate missing serial number
-    s, b, ct = make_req("/pub/archive/certificate/verify", "POST", {})
+    # Missing serial number / parameter validation
+    s, b, ct = make_req("/api/verify-certificate", "POST", {})
     p2 = (s == 400 and "required" in b.lower())
-    print(f"[{'PASS' if p2 else 'FAIL'}] Missing serial number validation (HTTP 400) -> {s}")
+    print(f"[{'PASS' if p2 else 'FAIL'}] Missing serial number validation on /api/verify-certificate (HTTP 400) -> {s}")
 
     # Certificate not found (MISMO ISSUED)
-    s, b, ct = make_req("/pub/archive/certificate/verify", "POST", {"serial_number": "NON_EXISTENT_999", "type": "certificate"})
+    s, b, ct = make_req("/api/verify-certificate", "POST", {"serial_number": "NON_EXISTENT_999", "type": "certificate"})
     p3 = (s == 404 and "Document not found" in b)
-    print(f"[{'PASS' if p3 else 'FAIL'}] Certificate Not Found (HTTP 404: Document not found) -> {s}")
+    print(f"[{'PASS' if p3 else 'FAIL'}] Certificate Not Found on /api/verify-certificate (HTTP 404: Document not found) -> {s}")
 
     # ID Card not found (MARINA ID)
-    s, b, ct = make_req("/pub/archive/id_card/verify", "POST", {"srn": "NON_EXISTENT_999", "type": "id"})
+    s, b, ct = make_req("/api/verify-certificate", "POST", {"srn": "NON_EXISTENT_999", "type": "id"})
     p4 = (s == 404 and "Invalid SRN" in b)
-    print(f"[{'PASS' if p4 else 'FAIL'}] ID Card Not Found (HTTP 404: Invalid SRN) -> {s}")
+    print(f"[{'PASS' if p4 else 'FAIL'}] ID Card Not Found on /api/verify-certificate (HTTP 404: Invalid SRN) -> {s}")
 
     # SIRB not found (SIRB)
-    s, b, ct = make_req("/pub/archive/certificate/verify", "POST", {"sirb_number": "NON_EXISTENT_999", "type": "sirb"})
+    s, b, ct = make_req("/api/verify-certificate", "POST", {"sirb_number": "NON_EXISTENT_999", "type": "sirb"})
     p5 = (s == 404 and "SIRB not found" in b)
-    print(f"[{'PASS' if p5 else 'FAIL'}] SIRB Not Found (HTTP 404: SIRB not found) -> {s}")
+    print(f"[{'PASS' if p5 else 'FAIL'}] SIRB Not Found on /api/verify-certificate (HTTP 404: SIRB not found) -> {s}")
 
     # reCAPTCHA API verification
     s, b, ct = make_req("/api/verify-recaptcha", "POST", {"token": "valid-token"})
