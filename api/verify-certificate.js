@@ -5,14 +5,19 @@ const DATABASE_ID = 'ai-studio-455b21a0-3ed4-45e8-a2ba-944e0f1fcdb0';
 
 function sendJson(res, statusCode, data) {
   try {
+    if (typeof res.setHeader === 'function') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    }
     if (typeof res.status === 'function' && typeof res.json === 'function') {
       return res.status(statusCode).json(data);
     }
     res.writeHead(statusCode, {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
     });
     return res.end(JSON.stringify(data));
   } catch (e) {
@@ -172,42 +177,60 @@ async function parseIncomingParams(req) {
     }
   } catch (_) {}
 
-  // Extract from body if already parsed
-  if (req.body) {
-    if (typeof req.body === 'object') {
-      Object.assign(params, req.body);
-    } else if (typeof req.body === 'string') {
-      try {
-        const parsed = JSON.parse(req.body);
-        if (parsed && typeof parsed === 'object') Object.assign(params, parsed);
-      } catch (_) {
-        const bodyParams = new URLSearchParams(req.body);
-        for (const [k, v] of bodyParams.entries()) {
-          if (!params[k]) params[k] = v;
-        }
-      }
-    }
-  } else if (req.method === 'POST' || req.method === 'PUT') {
-    // Read stream if body was not parsed by middleware
+  // Helper to parse string or Buffer
+  const parseStr = (str) => {
+    if (!str) return;
+    const trimmed = typeof str === 'string' ? str.trim() : str.toString('utf-8').trim();
+    if (!trimmed) return;
     try {
-      const raw = await new Promise((resolve) => {
-        let str = '';
-        req.on('data', (chunk) => (str += chunk));
-        req.on('end', () => resolve(str));
-        req.on('error', () => resolve(''));
-      });
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === 'object') Object.assign(params, parsed);
-        } catch (_) {
-          const bodyParams = new URLSearchParams(raw);
-          for (const [k, v] of bodyParams.entries()) {
-            if (!params[k]) params[k] = v;
-          }
-        }
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === 'object') {
+        Object.assign(params, parsed);
+        return;
       }
     } catch (_) {}
+    try {
+      const searchParams = new URLSearchParams(trimmed);
+      for (const [k, v] of searchParams.entries()) {
+        if (!params[k]) params[k] = v;
+      }
+    } catch (_) {}
+  };
+
+  // Extract from req.body
+  if (req.body) {
+    if (typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+      Object.assign(params, req.body);
+    } else {
+      parseStr(req.body);
+    }
+  }
+
+  // Extract from req.rawBody (Vercel raw body)
+  if (req.rawBody) {
+    parseStr(req.rawBody);
+  }
+
+  // If body stream reading is needed for POST/PUT/PATCH
+  if (Object.keys(params).length === 0 && (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH')) {
+    if (!req.readableEnded && !req.complete) {
+      try {
+        const raw = await new Promise((resolve) => {
+          let str = '';
+          const timer = setTimeout(() => resolve(str), 500);
+          req.on('data', (chunk) => (str += chunk));
+          req.on('end', () => {
+            clearTimeout(timer);
+            resolve(str);
+          });
+          req.on('error', () => {
+            clearTimeout(timer);
+            resolve('');
+          });
+        });
+        parseStr(raw);
+      } catch (_) {}
+    }
   }
 
   return params;
@@ -218,8 +241,8 @@ export default async function handler(req, res) {
     // CORS support
     if (typeof res.setHeader === 'function') {
       res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     }
 
     if (req.method === 'OPTIONS') {
@@ -232,24 +255,68 @@ export default async function handler(req, res) {
     }
 
     const query = await parseIncomingParams(req);
-    const serialNumber = (
+    
+    let serialNumber = (
       query.serial_number ||
+      query.serialNumber ||
       query.sirb_number ||
+      query.sirbNumber ||
+      query.sirb_no ||
+      query.sirbNo ||
       query.srn ||
       query.certificate_number ||
+      query.certificateNumber ||
       query.certificate_no ||
+      query.certificateNo ||
       query.legal ||
       query.id_number ||
+      query.idNumber ||
+      query.number ||
+      query.serial ||
+      query.q ||
+      query.query ||
+      query.code ||
+      query.value ||
+      query.val ||
+      query.searchTerm ||
+      query.search ||
+      query.document_number ||
+      query.doc_number ||
+      (query.id && !['id', 'certificate', 'sirb', 'srn'].includes(String(query.id).toLowerCase()) ? query.id : '') ||
       ''
     ).toString().trim();
 
-    let verificationType = (query.verification_type || query.type || '').toString().trim();
+    // Fallback: If no explicit parameter key matched, inspect all non-system string values in query
+    if (!serialNumber) {
+      const ignoreKeys = new Set([
+        'type',
+        'verification_type',
+        'verificationType',
+        'captcha',
+        'token',
+        'g-recaptcha-response',
+        'action',
+        'callback',
+        '_',
+      ]);
+      for (const [k, v] of Object.entries(query)) {
+        if (!ignoreKeys.has(k) && v !== undefined && v !== null) {
+          const strVal = String(v).trim();
+          if (strVal && !['id', 'certificate', 'sirb', 'srn', 'true', 'false', 'null', 'undefined', '[object object]'].includes(strVal.toLowerCase())) {
+            serialNumber = strVal;
+            break;
+          }
+        }
+      }
+    }
+
+    let verificationType = (query.verification_type || query.verificationType || query.type || '').toString().trim();
     if (!verificationType) {
-      if (query.srn || query.id_number) {
+      if (query.srn || query.id_number || query.idNumber) {
         verificationType = 'id';
-      } else if (query.sirb_number) {
+      } else if (query.sirb_number || query.sirbNumber || query.sirb_no) {
         verificationType = 'sirb';
-      } else if (query.certificate_number || query.serial_number || query.legal) {
+      } else if (query.certificate_number || query.certificateNumber || query.serial_number || query.serialNumber || query.legal) {
         verificationType = 'certificate';
       }
     }
