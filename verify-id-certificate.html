@@ -662,38 +662,75 @@
     }
   });
 
-  function clearInlineMessage() {
-    var existing = document.querySelectorAll('#marina-validation-toast, .marina-validation-toast, #marina-verify-inline-message');
-    for (var i = 0; i < existing.length; i++) {
-      if (existing[i].parentNode) {
-        existing[i].parentNode.removeChild(existing[i]);
-      }
+  // ---------------------------------------------------------------------------
+  // SINGLE-NOTIFICATION GUARD
+  // ---------------------------------------------------------------------------
+  // Verification failures can be surfaced by more than one layer of the
+  // application. This notification handler therefore uses:
+  //   1. A single fixed DOM id.
+  //   2. A message/time lock to ignore duplicate calls.
+  //   3. A DOM check before creating a new notification.
+  // This prevents "Document not found" from appearing twice for one attempt.
+  var _lastInlineToastTime = 0;
+  var _lastInlineToastMsg = '';
+  var _inlineToastTimer = null;
+  var INLINE_TOAST_ID = 'marina-validation-toast';
+
+  function removeInlineMessage() {
+    var existing = document.getElementById(INLINE_TOAST_ID);
+    if (existing && existing.parentNode) {
+      existing.parentNode.removeChild(existing);
+    }
+
+    if (_inlineToastTimer) {
+      clearTimeout(_inlineToastTimer);
+      _inlineToastTimer = null;
     }
   }
 
-  var _lastInlineToastTime = 0;
-  var _lastInlineToastMsg = '';
-
   function showInlineMessage(message) {
-    if (document.querySelector('.s-alert-box') || document.querySelector('#marina-validation-toast')) {
-      return;
-    }
     var msg = extractErrorMessage(message);
     var now = Date.now();
-    if (now - _lastInlineToastTime < 500 && _lastInlineToastMsg === msg) {
+
+    // Do not create another copy while the same message is already visible.
+    var existing = document.getElementById(INLINE_TOAST_ID);
+    if (existing) {
+      var existingMessage = existing.getAttribute('data-message') || '';
+      if (existingMessage === msg) {
+        return;
+      }
+
+      // If a different message arrives, replace the old one cleanly.
+      removeInlineMessage();
+    }
+
+    // Ignore repeated identical calls within 2 seconds.
+    if (_lastInlineToastMsg === msg && (now - _lastInlineToastTime) < 2000) {
       return;
     }
+
     _lastInlineToastTime = now;
     _lastInlineToastMsg = msg;
 
-    clearInlineMessage();
+    // If the original application's alert is already visible, do not add a
+    // second custom notification on top of it.
+    var existingAppAlert = document.querySelector('.s-alert-box');
+    if (existingAppAlert) {
+      return;
+    }
+
     var target = document.body;
     if (!target) {
       return;
     }
+
     var banner = document.createElement('div');
-    banner.id = 'marina-validation-toast';
+    banner.id = INLINE_TOAST_ID;
     banner.className = 'marina-validation-toast';
+    banner.setAttribute('data-message', msg);
+    banner.setAttribute('role', 'alert');
+    banner.setAttribute('aria-live', 'assertive');
+
     banner.style.position = 'fixed';
     banner.style.top = '20px';
     banner.style.right = '20px';
@@ -713,6 +750,7 @@
     banner.style.display = 'flex';
     banner.style.alignItems = 'center';
     banner.style.justifyContent = 'space-between';
+    banner.style.boxSizing = 'border-box';
 
     var textSpan = document.createElement('div');
     textSpan.style.flex = '1';
@@ -723,20 +761,31 @@
 
     var closeBtn = document.createElement('button');
     closeBtn.type = 'button';
-    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.setAttribute('aria-label', 'Close notification');
     closeBtn.textContent = '×';
     closeBtn.style.background = 'transparent';
     closeBtn.style.border = 'none';
     closeBtn.style.color = '#fff';
     closeBtn.style.cursor = 'pointer';
-    closeBtn.style.fontSize = '16px';
+    closeBtn.style.fontSize = '18px';
     closeBtn.style.lineHeight = '1';
     closeBtn.style.padding = '0';
-    closeBtn.style.marginLeft = '4px';
+    closeBtn.style.marginLeft = '8px';
+
     closeBtn.onclick = function () {
       banner.style.opacity = '0';
       banner.style.transform = 'translateX(24px)';
-      setTimeout(function () { banner.remove(); }, 300);
+
+      setTimeout(function () {
+        if (banner.parentNode) {
+          banner.parentNode.removeChild(banner);
+        }
+      }, 300);
+
+      if (_inlineToastTimer) {
+        clearTimeout(_inlineToastTimer);
+        _inlineToastTimer = null;
+      }
     };
 
     banner.appendChild(textSpan);
@@ -748,11 +797,20 @@
       banner.style.transform = 'translateX(0)';
     });
 
-    setTimeout(function () {
+    _inlineToastTimer = setTimeout(function () {
+      if (!banner.parentNode) {
+        _inlineToastTimer = null;
+        return;
+      }
+
       banner.style.opacity = '0';
       banner.style.transform = 'translateX(20px)';
+
       setTimeout(function () {
-        clearInlineMessage();
+        if (banner.parentNode) {
+          banner.parentNode.removeChild(banner);
+        }
+        _inlineToastTimer = null;
       }, 300);
     }, 4000);
   }
