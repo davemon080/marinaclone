@@ -41,56 +41,40 @@ async function parseIncomingParams(req) {
     }
   } catch (_) {}
 
-  const parseStr = (str) => {
-    if (!str) return;
-    const trimmed = typeof str === 'string' ? str.trim() : str.toString('utf-8').trim();
-    if (!trimmed) return;
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (parsed && typeof parsed === 'object') {
-        Object.assign(params, parsed);
-        return;
-      }
-    } catch (_) {}
-    try {
-      const searchParams = new URLSearchParams(trimmed);
-      for (const [k, v] of searchParams.entries()) {
-        if (!params[k]) params[k] = v;
-      }
-    } catch (_) {}
-  };
-
   if (req.body) {
-    if (typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+    if (typeof req.body === 'object') {
       Object.assign(params, req.body);
-    } else {
-      parseStr(req.body);
-    }
-  }
-
-  if (req.rawBody) {
-    parseStr(req.rawBody);
-  }
-
-  if (Object.keys(params).length === 0 && (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH')) {
-    if (!req.readableEnded && !req.complete) {
+    } else if (typeof req.body === 'string') {
       try {
-        const raw = await new Promise((resolve) => {
-          let str = '';
-          const timer = setTimeout(() => resolve(str), 500);
-          req.on('data', (chunk) => (str += chunk));
-          req.on('end', () => {
-            clearTimeout(timer);
-            resolve(str);
-          });
-          req.on('error', () => {
-            clearTimeout(timer);
-            resolve('');
-          });
-        });
-        parseStr(raw);
-      } catch (_) {}
+        const parsed = JSON.parse(req.body);
+        if (parsed && typeof parsed === 'object') Object.assign(params, parsed);
+      } catch (_) {
+        const bodyParams = new URLSearchParams(req.body);
+        for (const [k, v] of bodyParams.entries()) {
+          if (!params[k]) params[k] = v;
+        }
+      }
     }
+  } else if (req.method === 'POST' || req.method === 'PUT') {
+    try {
+      const raw = await new Promise((resolve) => {
+        let str = '';
+        req.on('data', (chunk) => (str += chunk));
+        req.on('end', () => resolve(str));
+        req.on('error', () => resolve(''));
+      });
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') Object.assign(params, parsed);
+        } catch (_) {
+          const bodyParams = new URLSearchParams(raw);
+          for (const [k, v] of bodyParams.entries()) {
+            if (!params[k]) params[k] = v;
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   return params;
@@ -150,23 +134,23 @@ export default async function handler(req, res) {
           verifyRes.on('end', () => {
             try {
               const parsedData = JSON.parse(rawData);
-              sendJson(res, 200, { ok: Boolean(parsedData.success || true) });
+              sendJson(res, 200, { ok: Boolean(parsedData.success) });
             } catch (e) {
-              sendJson(res, 200, { ok: true, message: 'verification response parsed gracefully' });
+              sendJson(res, 200, { ok: false, error: 'verification response parsing failed' });
             }
             resolve();
           });
         });
 
         request.on('error', () => {
-          sendJson(res, 200, { ok: true, message: 'verification network error handled gracefully' });
+          sendJson(res, 200, { ok: false, error: 'verification request failed' });
           resolve();
         });
 
         request.write(postData);
         request.end();
       } catch (err) {
-        sendJson(res, 200, { ok: true, message: 'verification exception handled gracefully' });
+        sendJson(res, 200, { ok: false, error: 'verification request exception' });
         resolve();
       }
     });

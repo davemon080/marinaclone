@@ -5,19 +5,14 @@ const DATABASE_ID = 'ai-studio-455b21a0-3ed4-45e8-a2ba-944e0f1fcdb0';
 
 function sendJson(res, statusCode, data) {
   try {
-    if (typeof res.setHeader === 'function') {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    }
     if (typeof res.status === 'function' && typeof res.json === 'function') {
       return res.status(statusCode).json(data);
     }
     res.writeHead(statusCode, {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     });
     return res.end(JSON.stringify(data));
   } catch (e) {
@@ -82,17 +77,14 @@ function fetchJson(url, options = {}) {
 async function fetchFromFirestore(identifier, verificationType) {
   const clean = identifier.trim().toUpperCase();
   if (!clean) return null;
-  const cleanNoPunct = clean.replace(/[^A-Z0-9]/g, '');
 
   const type = normalizeVerificationType(verificationType);
-  let primaryCols = ['certificates'];
+  let collections = ['certificates'];
   if (type === 'id') {
-    primaryCols = ['licenses', 'id_cards'];
+    collections = ['licenses', 'id_cards'];
   } else if (type === 'sirb') {
-    primaryCols = ['sirb', 'sirbs'];
+    collections = ['sirb', 'sirbs'];
   }
-  const allCols = ['certificates', 'licenses', 'id_cards', 'sirb', 'sirbs'];
-  const collections = Array.from(new Set([...primaryCols, ...allCols]));
   const databases = [DATABASE_ID, '(default)'];
 
   for (const dbId of databases) {
@@ -112,7 +104,6 @@ async function fetchFromFirestore(identifier, verificationType) {
               parsed[k] = v.arrayValue.values.map((item) => item.stringValue || item.integerValue || '');
             }
           }
-          parsed._id = clean;
           return parsed;
         }
 
@@ -121,7 +112,7 @@ async function fetchFromFirestore(identifier, verificationType) {
         const queryBody = JSON.stringify({
           structuredQuery: {
             from: [{ collectionId: col }],
-            limit: 100,
+            limit: 30,
           },
         });
 
@@ -134,8 +125,6 @@ async function fetchFromFirestore(identifier, verificationType) {
         if (qRes.ok && Array.isArray(qRes.data)) {
           for (const entry of qRes.data) {
             if (entry.document && entry.document.fields) {
-              const docName = entry.document.name || '';
-              const docId = docName.split('/').pop() || '';
               const fields = entry.document.fields;
               const parsed = {};
               for (const [k, v] of Object.entries(fields)) {
@@ -146,27 +135,11 @@ async function fetchFromFirestore(identifier, verificationType) {
                   parsed[k] = v.arrayValue.values.map((item) => item.stringValue || item.integerValue || '');
                 }
               }
-              parsed._id = docId;
-
-              const candidates = [
-                docId,
-                parsed.serial_number,
-                parsed.certificate_no,
-                parsed.certificate_number,
-                parsed.srn,
-                parsed.id_number,
-                parsed.sirb_number,
-                parsed.sirb_no,
-                parsed.license_no,
-                parsed.license_number,
-                parsed.id,
-              ].map((val) => String(val || '').trim().toUpperCase()).filter(Boolean);
-
-              for (const cand of candidates) {
-                const candNoPunct = cand.replace(/[^A-Z0-9]/g, '');
-                if (cand === clean || candNoPunct === cleanNoPunct) {
-                  return parsed;
-                }
+              const s1 = String(parsed.serial_number || '').trim().toUpperCase();
+              const s2 = String(parsed.certificate_no || parsed.certificate_number || '').trim().toUpperCase();
+              const s3 = String(parsed.srn || parsed.id_number || parsed.license_no || parsed.license_number || '').trim().toUpperCase();
+              if (s1 === clean || s2 === clean || s3 === clean) {
+                return parsed;
               }
             }
           }
@@ -176,72 +149,6 @@ async function fetchFromFirestore(identifier, verificationType) {
       }
     }
   }
-
-  // 3. Fallback mock database for standard records if not found in remote Firestore
-  const fallbackRecords = [
-    {
-      serial_number: '66870975',
-      certificate_no: 'COICNW200003978734',
-      certificate_number: 'COICNW200003978734',
-      full_name: 'ADAMU JIBRIL',
-      name: 'ADAMU JIBRIL',
-      first_name: 'ADAMU',
-      last_name: 'JIBRIL',
-      title_of_certificate: 'OFFICER IN CHARGE OF A NAVIGATIONAL WATCH (II/1)',
-      certificate_type: 'Certificate of Competency',
-      status: 'VALID',
-      issue_date: 'JUNE 19, 2024',
-      date_issued: 'JUNE 19, 2024',
-      expiry_date: 'JUNE 19, 2029',
-      date_expiry: 'JUNE 19, 2029',
-      function: 'Navigation at the Operational Level',
-      level_of_responsibility: 'Operational',
-      regulation_no: 'Regulation II/1',
-      remarks: 'Verified Record',
-    },
-    {
-      serial_number: 'DOC-1001',
-      certificate_no: 'CERT-1001',
-      certificate_number: 'CERT-1001',
-      full_name: 'Maria Santos',
-      name: 'Maria Santos',
-      first_name: 'Maria',
-      last_name: 'Santos',
-      title_of_certificate: 'Basic Safety Training',
-      status: 'VALID',
-      issue_date: '2023-01-15',
-      expiry_date: '2028-01-15',
-    },
-    {
-      serial_number: 'DOC-1002',
-      certificate_no: 'CERT-1002',
-      certificate_number: 'CERT-1002',
-      full_name: 'Juan Dela Cruz',
-      name: 'Juan Dela Cruz',
-      first_name: 'Juan',
-      last_name: 'Dela Cruz',
-      title_of_certificate: 'Proficiency in Survival Craft',
-      status: 'VALID',
-      issue_date: '2022-06-10',
-      expiry_date: '2027-06-10',
-    },
-  ];
-
-  for (const rec of fallbackRecords) {
-    const candidates = [
-      rec.serial_number,
-      rec.certificate_no,
-      rec.certificate_number,
-      rec.srn,
-    ].map((val) => String(val || '').trim().toUpperCase()).filter(Boolean);
-
-    for (const cand of candidates) {
-      if (cand === clean || cand.replace(/[^A-Z0-9]/g, '') === cleanNoPunct) {
-        return rec;
-      }
-    }
-  }
-
   return null;
 }
 
@@ -265,60 +172,42 @@ async function parseIncomingParams(req) {
     }
   } catch (_) {}
 
-  // Helper to parse string or Buffer
-  const parseStr = (str) => {
-    if (!str) return;
-    const trimmed = typeof str === 'string' ? str.trim() : str.toString('utf-8').trim();
-    if (!trimmed) return;
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (parsed && typeof parsed === 'object') {
-        Object.assign(params, parsed);
-        return;
-      }
-    } catch (_) {}
-    try {
-      const searchParams = new URLSearchParams(trimmed);
-      for (const [k, v] of searchParams.entries()) {
-        if (!params[k]) params[k] = v;
-      }
-    } catch (_) {}
-  };
-
-  // Extract from req.body
+  // Extract from body if already parsed
   if (req.body) {
-    if (typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+    if (typeof req.body === 'object') {
       Object.assign(params, req.body);
-    } else {
-      parseStr(req.body);
-    }
-  }
-
-  // Extract from req.rawBody (Vercel raw body)
-  if (req.rawBody) {
-    parseStr(req.rawBody);
-  }
-
-  // If body stream reading is needed for POST/PUT/PATCH
-  if (Object.keys(params).length === 0 && (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH')) {
-    if (!req.readableEnded && !req.complete) {
+    } else if (typeof req.body === 'string') {
       try {
-        const raw = await new Promise((resolve) => {
-          let str = '';
-          const timer = setTimeout(() => resolve(str), 500);
-          req.on('data', (chunk) => (str += chunk));
-          req.on('end', () => {
-            clearTimeout(timer);
-            resolve(str);
-          });
-          req.on('error', () => {
-            clearTimeout(timer);
-            resolve('');
-          });
-        });
-        parseStr(raw);
-      } catch (_) {}
+        const parsed = JSON.parse(req.body);
+        if (parsed && typeof parsed === 'object') Object.assign(params, parsed);
+      } catch (_) {
+        const bodyParams = new URLSearchParams(req.body);
+        for (const [k, v] of bodyParams.entries()) {
+          if (!params[k]) params[k] = v;
+        }
+      }
     }
+  } else if (req.method === 'POST' || req.method === 'PUT') {
+    // Read stream if body was not parsed by middleware
+    try {
+      const raw = await new Promise((resolve) => {
+        let str = '';
+        req.on('data', (chunk) => (str += chunk));
+        req.on('end', () => resolve(str));
+        req.on('error', () => resolve(''));
+      });
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') Object.assign(params, parsed);
+        } catch (_) {
+          const bodyParams = new URLSearchParams(raw);
+          for (const [k, v] of bodyParams.entries()) {
+            if (!params[k]) params[k] = v;
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   return params;
@@ -329,8 +218,8 @@ export default async function handler(req, res) {
     // CORS support
     if (typeof res.setHeader === 'function') {
       res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     }
 
     if (req.method === 'OPTIONS') {
@@ -343,68 +232,24 @@ export default async function handler(req, res) {
     }
 
     const query = await parseIncomingParams(req);
-    
-    let serialNumber = (
+    const serialNumber = (
       query.serial_number ||
-      query.serialNumber ||
       query.sirb_number ||
-      query.sirbNumber ||
-      query.sirb_no ||
-      query.sirbNo ||
       query.srn ||
       query.certificate_number ||
-      query.certificateNumber ||
       query.certificate_no ||
-      query.certificateNo ||
       query.legal ||
       query.id_number ||
-      query.idNumber ||
-      query.number ||
-      query.serial ||
-      query.q ||
-      query.query ||
-      query.code ||
-      query.value ||
-      query.val ||
-      query.searchTerm ||
-      query.search ||
-      query.document_number ||
-      query.doc_number ||
-      (query.id && !['id', 'certificate', 'sirb', 'srn'].includes(String(query.id).toLowerCase()) ? query.id : '') ||
       ''
     ).toString().trim();
 
-    // Fallback: If no explicit parameter key matched, inspect all non-system string values in query
-    if (!serialNumber) {
-      const ignoreKeys = new Set([
-        'type',
-        'verification_type',
-        'verificationType',
-        'captcha',
-        'token',
-        'g-recaptcha-response',
-        'action',
-        'callback',
-        '_',
-      ]);
-      for (const [k, v] of Object.entries(query)) {
-        if (!ignoreKeys.has(k) && v !== undefined && v !== null) {
-          const strVal = String(v).trim();
-          if (strVal && !['id', 'certificate', 'sirb', 'srn', 'true', 'false', 'null', 'undefined', '[object object]'].includes(strVal.toLowerCase())) {
-            serialNumber = strVal;
-            break;
-          }
-        }
-      }
-    }
-
-    let verificationType = (query.verification_type || query.verificationType || query.type || '').toString().trim();
+    let verificationType = (query.verification_type || query.type || '').toString().trim();
     if (!verificationType) {
-      if (query.srn || query.id_number || query.idNumber) {
+      if (query.srn || query.id_number) {
         verificationType = 'id';
-      } else if (query.sirb_number || query.sirbNumber || query.sirb_no) {
+      } else if (query.sirb_number) {
         verificationType = 'sirb';
-      } else if (query.certificate_number || query.certificateNumber || query.serial_number || query.serialNumber || query.legal) {
+      } else if (query.certificate_number || query.serial_number || query.legal) {
         verificationType = 'certificate';
       }
     }
@@ -528,7 +373,7 @@ export default async function handler(req, res) {
         verification_type: selectedType,
       };
 
-      return sendJson(res, 200, {
+    return sendJson(res, 200, {
         status: 200,
         ok: true,
         data: recordData,
@@ -541,7 +386,7 @@ export default async function handler(req, res) {
       ok: false,
       data: {},
       message: 'Document not found',
-      error: 'Document not found',
+     
     });
   } catch (globalError) {
     console.error('[Unhandled API Error in verify-certificate]', globalError);

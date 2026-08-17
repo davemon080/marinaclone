@@ -642,11 +642,11 @@
     if (typeof url !== 'string') {
       return url;
     }
-    if (/\/api\/verify-recaptcha|\/verify-recaptcha/i.test(url)) {
-      return url;
-    }
-    if (/\/pub\/archive\/|\/pub\/sirb\/|api-mismo\.marina\.gov\.ph|\/pub\/verify/i.test(url)) {
+    if (/api-mismo\.marina\.gov\.ph/i.test(url)) {
       return '/api/verify-certificate';
+    }
+    if (/\/api\/verify-certificate|\/pub\/archive\/certificate\/verify/i.test(url)) {
+      return url;
     }
     return url;
   }
@@ -675,16 +675,14 @@
   var _lastInlineToastMsg = '';
 
   function showInlineMessage(message) {
-    var msg = extractErrorMessage(message);
-    var now = Date.now();
-
-    if (now - _lastInlineToastTime < 2500) {
-      return;
-    }
     if (document.querySelector('.s-alert-box') || document.querySelector('#marina-validation-toast')) {
       return;
     }
-
+    var msg = extractErrorMessage(message);
+    var now = Date.now();
+    if (now - _lastInlineToastTime < 500 && _lastInlineToastMsg === msg) {
+      return;
+    }
     _lastInlineToastTime = now;
     _lastInlineToastMsg = msg;
 
@@ -761,13 +759,9 @@
 
   window._showValidationToast = showInlineMessage;
 
-  var _activeVerifyPromise = null;
-  var _lastVerifyTime = 0;
-  var _lastVerifyKey = '';
-
   var originalOpen = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function (method, url) {
-    if (typeof url === 'string' && (/\/api\/verify-certificate|\/pub\/archive\/|\/pub\/sirb\/|api-mismo\.marina\.gov\.ph/i.test(url))) {
+    if (typeof url === 'string' && /\/api\/verify-certificate|\/pub\/archive\/certificate\/verify|api-mismo\.marina\.gov\.ph/i.test(url)) {
       var type = currentType || readSelectedType();
       url = rewriteVerifyUrl(url);
       if (type) {
@@ -783,7 +777,7 @@
     window.fetch = function (input, init) {
       var target = input;
       var url = typeof target === 'string' ? target : target && target.url;
-      if (typeof url === 'string' && (/\/api\/verify-certificate|\/pub\/archive\/|\/pub\/sirb\/|api-mismo\.marina\.gov\.ph/i.test(url))) {
+      if (typeof url === 'string' && /\/api\/verify-certificate|\/pub\/archive\/certificate\/verify|api-mismo\.marina\.gov\.ph/i.test(url)) {
         var type = currentType || readSelectedType();
         url = rewriteVerifyUrl(url);
         if (type) {
@@ -794,41 +788,10 @@
         } else if (input && typeof input === 'object' && input.url) {
           target = Object.assign({}, input, { url: url });
         }
-
-        var key = url + '|' + (init && init.body ? String(init.body) : '');
-        var now = Date.now();
-        if (_activeVerifyPromise && _lastVerifyKey === key && (now - _lastVerifyTime < 1000)) {
-          return _activeVerifyPromise;
-        }
-
-        _lastVerifyKey = key;
-        _lastVerifyTime = now;
-        _activeVerifyPromise = originalFetch.call(this, target, init).finally(function () {
-          setTimeout(function () {
-            if (_lastVerifyKey === key) {
-              _activeVerifyPromise = null;
-            }
-          }, 300);
-        });
-        return _activeVerifyPromise;
       }
       return originalFetch.call(this, target, init);
     };
   }
-
-  var _lastSubmitClickTime = 0;
-  document.addEventListener('click', function (e) {
-    var btn = e.target && e.target.closest && e.target.closest('button, input[type="submit"], .btn-danger, .btn-primary, .btn-success');
-    if (btn && (btn.textContent || '').toLowerCase().indexOf('verify') !== -1) {
-      var now = Date.now();
-      if (now - _lastSubmitClickTime < 600) {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-      }
-      _lastSubmitClickTime = now;
-    }
-  }, true);
 
   document.addEventListener('DOMContentLoaded', refreshType);
   refreshType();
